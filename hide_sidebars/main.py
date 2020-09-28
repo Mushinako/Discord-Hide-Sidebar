@@ -57,6 +57,7 @@ def parse_arguments() -> DiscordHideSidebarArgs:
         nargs=1,
         default=None,
         type=int,
+        choices=range(65536),
         help="Port for the debugging session to run",
         dest="port"
     )
@@ -73,17 +74,16 @@ def main() -> None:
 
     args = parse_arguments()
 
-    if platform.platform == "Windows":
+    operating_system = platform.platform().lower()
+
+    if operating_system.startswith("windows"):
         runner = WinDiscordHideSidebar(
             args.discord_path,
             args.js_path,
             args.port
         )
+        runner.run()
     else:
         raise NotImplementedError(
-            f"Your operating system \"{platform.platform}\" is not yet supported"
+            f"Your operating system \"{platform.platform()}\" is not yet supported"
         )
-
-
-if __name__ == "__main__":
-    main()

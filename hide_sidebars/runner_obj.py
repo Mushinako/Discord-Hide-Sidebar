@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Module that contains the objects for each operating system."""
 import os.path
-import glob
-from typing import List, Optional
+import subprocess
+from glob import glob
+from typing import Optional
 
 JS_FILE_NAME = "inject.js"
 
@@ -19,8 +20,10 @@ class DiscordHideSidebar:
     Instance variables:
         discord_path [str]: Path of Discord executable
         js_path      [str]: Path of JavaScript
-        port         [int]: Port forthe debugging session to run
+        port         [int]: Port for the debugging session to run
+        debug_url    [str]: URL of the debugging session
     """
+
     DEFAULT_DISCORD_PATH_PATTERN: str = ""
     DEFAULT_JS_PATH: str = os.path.join(
         os.path.dirname(__file__),
@@ -30,28 +33,45 @@ class DiscordHideSidebar:
     DEFAULT_PORT: str = 34726
     COMMAND_PARAMETERS: str = "--remote-debugging-port={port}"
 
-    def __new__(cls, *args, **kwargs) -> object:
+    def __new__(cls, *args, **kwargs):
         """Prevents `DiscordHideSidebar` from directly initialized"""
         if cls is DiscordHideSidebar:
             raise NotImplementedError(
                 "Initiation has to be specialized by operating system!"
             )
-        return object.__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
     def __init__(self, discord_path: Optional[str], js_path: Optional[str], port: Optional[int]) -> None:
-        if not self.DEFAULT_DISCORD_PATH:
+        if not self.DEFAULT_DISCORD_PATH_PATTERN:
             raise NotImplementedError(
                 f"This class {type(self).__name__} is not fully implemented!"
             )
         self.discord_path = discord_path
         if self.discord_path is None:
             # The last match is assumed to be the latest version
-            self.discord_path = glob.glob(
-                self.DEFAULT_DISCORD_PATH_PATTERN
-            )[-1]
-        # Check if Discord path is correct
+            paths = glob(self.DEFAULT_DISCORD_PATH_PATTERN)
+            if not paths:
+                raise FileNotFoundError(
+                    f"No Discord executable found in default path {self.DEFAULT_DISCORD_PATH_PATTERN}!"
+                )
+            self.discord_path = paths[-1]
+        # Test path validity
+        elif not os.path.isfile(self.discord_path):
+            raise FileNotFoundError(f"{self.discord_path} is not a file!")
         self.js_path = js_path or self.DEFAULT_JS_PATH
+        # Test path validity
+        if not os.path.isfile(self.js_path):
+            raise FileNotFoundError(f"{self.js_path} is not a file!")
         self.port = port or self.DEFAULT_PORT
+        self.debug_url = f"https://localhost:{self.port}"
+
+    def run(self) -> None:
+        self.kill_running()
+
+    def kill_running(self) -> None:
+        raise NotImplementedError(
+            f"This class {type(self).__name__} is not fully implemented!"
+        )
 
 
 class WinDiscordHideSidebar(DiscordHideSidebar):
@@ -60,3 +80,14 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
         os.path.expandvars(r"%LocalAppData%"),
         r"Discord\*\Discord.exe"
     )
+
+    def kill_running(self) -> None:
+        DISCORD_EXECUTABLE_NAME = "Discord.exe"
+        processes = subprocess.Popen(
+            ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        _, err = processes.communicate()
+        if err is not None:
+            raise OSError(err)
