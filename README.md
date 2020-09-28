@@ -1,6 +1,6 @@
-# Discord Hide Sidebars
+# Discord Hide Sidebar
 
-I don't need the side bars all the time, so why not hide it?
+I don't need the left sidebar all the time, so why not hide it when I need more screen dedicated to the messages?
 
 **This script starts your Discord in debug mode.**
 **This means that your personal information may be visible to other programs on your computer or others on the Internet.**
