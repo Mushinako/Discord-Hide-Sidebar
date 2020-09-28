@@ -5,13 +5,18 @@ I don't need the left sidebar all the time, so why not hide it when I need more 
 **This script starts your Discord in debug mode.**
 **This means that your personal information may be visible to other programs on your computer or others on the Internet.**
 **Do not use this script unless you know what you're doing!**
+
 **By using this script, you acknowledge this possibility.**
 **I will *not* be responsible for any damage caused by this script.**
+
 If you don't know how to mitigate this risk and are not willing to take it, please wait for Discord to implement this functionality.
 
 ## Requirements
 
-* Python (latest version `3.8` guaranteed, may work on `3.7` and above)
+* Discord installed
+* Python installed
+  * Support for latest version (currently `3.8`) guaranteed
+  * May work on `3.7` and above
 * Libraries (can be installed via `pip install -r requirements.txt`)
   * [requests](https://requests.readthedocs.io/en/master/): tested on `2.24.0`
   * [websocket-client](https://github.com/websocket-client/websocket-client): tested on `0.57.0`
@@ -45,7 +50,7 @@ python3 hideside.py -d "/usr/bin/discord"
 ```text
 usage: hideside.py [-h] [-d DISCORD_PATH] [-j JS_PATH] [-p range65536] [-m]
 
-Hide sidebars on Discord!
+Hide sidebar on Discord!
 
 optional arguments:
   -h, --help            show this help message and exit

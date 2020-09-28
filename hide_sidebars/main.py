@@ -39,7 +39,7 @@ def parse_arguments() -> DiscordHideSidebarArgs:
     Returns:
         [DiscordHideSidebarArgs]: The object containing all arguments
     """
-    parser = ArgumentParser(description="Hide sidebars on Discord!")
+    parser = ArgumentParser(description="Hide sidebar on Discord!")
     parser.add_argument(
         "-d", "--discord-path",
         nargs=1,
