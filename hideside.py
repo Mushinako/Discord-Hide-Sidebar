@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import os.path
 import logging
 
 from hide_sidebars.main import main
 
-LOG_FILE = "dhs.log"
+LOG_FILE = os.path.join("logs", "dhs.log")
 # Change this to `logging.WARN` and redact all personal information before sharing logs!
 LOG_LEVEL = logging.DEBUG
 

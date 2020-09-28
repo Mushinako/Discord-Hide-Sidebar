@@ -40,6 +40,7 @@ class DiscordHideSidebar:
     DEFAULT_JS_PATH = os.path.join(
         os.path.dirname(__file__),
         os.path.pardir,
+        "js",
         JS_FILE_NAME
     )
     DEFAULT_PORT = 34726

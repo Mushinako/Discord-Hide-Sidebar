@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Main module. Decides which functions to call"""
 
+import os.path
 import platform
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
 from hide_sidebars.runner_obj import WinDiscordHideSidebar
-
-DEFAULT_JS_PATH = "inject.js"
 
 
 class DiscordHideSidebarArgs(Namespace):

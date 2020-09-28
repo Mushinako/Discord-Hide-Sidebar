@@ -25,7 +25,9 @@ Click it to toggle.
 
 #### Windows
 
-* Double click `hideside.bat`
+* If you want to see the console window, double click `hideside.bat`
+* If you do not want to see the console window, double click `hideside.vbs`
+  * Note this will also start Discord minimized
 
 #### Others
 

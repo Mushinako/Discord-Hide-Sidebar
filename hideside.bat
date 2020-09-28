@@ -1,2 +1,2 @@
 @echo off
-py -3 hideside.py %* > output.log
+py -3 hideside.py %* > logs\output.log
