@@ -27,7 +27,9 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 ## How to use
 
 When Discord is launched through the script, there'll be a `<` next to `?` on the top-right.
-Click `<` to toggle.
+Click `<` to toggle. The toggle hides friends list and channels list
+
+![Example](asset/eg.gif)
 
 ### Basic Usage
 
@@ -89,3 +91,8 @@ You can also open an issue if the script does not work for PTB.
 
 If you have both PTB and non-PTB installed, the script will priorize non-PTB version.
 You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
+
+### Can my configuration be saved
+
+This is definitely doable.
+I have not implemented it due to lack of time and its potential to slow everything down.
