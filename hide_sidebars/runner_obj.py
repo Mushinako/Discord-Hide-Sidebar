@@ -18,13 +18,13 @@ class DiscordHideSidebar:
     """Base class for all operating systems
 
     Class variables:
-        DEFAULT_DISCORD_PATH_PATTERN [str]: Glob pattern of default path of Discord executable
-        DEFAULT_JS_PATH              [str]: Default path of JavaScript to be run
-        DEFAULT_PORT                 [int]: Default port for the debugging session to run
-        DEBUG_PARAMETER         [Template]: Parameter template to trigger Discord debugging mode
-        MINIMIZED_PARAMETR           [str]: Parameter to ask Discord to start minimized
-        URL                     [Template]: URL template of the debugging session
-        SOCKET_URL_KEY               [str]: Key name for socket URL
+        DEFAULT_DISCORD_PATH_PATTERNS [List[str]]: Glob pattern of default path of Discord executable
+        DEFAULT_JS_PATH               [str]      : Default path of JavaScript to be run
+        DEFAULT_PORT                  [int]      : Default port for the debugging session to run
+        DEBUG_PARAMETER               [Template] : Parameter template to trigger Discord debugging mode
+        MINIMIZED_PARAMETR            [str]      : Parameter to ask Discord to start minimized
+        URL                           [Template] : URL template of the debugging session
+        SOCKET_URL_KEY                [str]      : Key name for socket URL
 
     Instance variables:
         discord_path [str]                       : Path of Discord executable
@@ -36,7 +36,7 @@ class DiscordHideSidebar:
         process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
 
-    DEFAULT_DISCORD_PATH_PATTERN: str = ""
+    DEFAULT_DISCORD_PATH_PATTERNS = [""]
     DEFAULT_JS_PATH = os.path.join(
         os.path.dirname(__file__),
         os.path.pardir,
@@ -58,19 +58,26 @@ class DiscordHideSidebar:
         return super().__new__(cls)
 
     def __init__(self, discord_path: Optional[str], js_path: Optional[str], port: Optional[int], minimized: bool) -> None:
-        if not self.DEFAULT_DISCORD_PATH_PATTERN:
+        if not self.DEFAULT_DISCORD_PATH_PATTERNS[0]:
             raise NotImplementedError(
                 f"This class {type(self).__name__} is not fully implemented!"
             )
         self.discord_path = discord_path
         if self.discord_path is None:
-            # The last match is assumed to be the latest version
-            paths = glob(self.DEFAULT_DISCORD_PATH_PATTERN)
-            if not paths:
+            for pattern in self.DEFAULT_DISCORD_PATH_PATTERNS:
+                # The last match is assumed to be the latest version
+                paths = glob(pattern)
+                if not paths:
+                    logging.warn(
+                        f"No Discord executable found in {pattern}"
+                    )
+                    continue
+                self.discord_path = paths[-1]
+                break
+            else:
                 raise FileNotFoundError(
-                    f"No Discord executable found in default path {self.DEFAULT_DISCORD_PATH_PATTERN}!"
+                    f"No Discord executable found in default paths {self.DEFAULT_DISCORD_PATH_PATTERNS}"
                 )
-            self.discord_path = paths[-1]
         # Test path validity
         elif not os.path.isfile(self.discord_path):
             raise FileNotFoundError(f"{self.discord_path} is not a file!")
@@ -193,10 +200,18 @@ class DiscordHideSidebar:
 
 class WinDiscordHideSidebar(DiscordHideSidebar):
     """Special variables/functions for Windows"""
-    DEFAULT_DISCORD_PATH_PATTERN = os.path.join(
-        os.path.expandvars(r"%LocalAppData%"),
-        r"Discord\*\Discord.exe"
-    )
+
+    # Non-PTB version is priorized
+    DEFAULT_DISCORD_PATH_PATTERNS = [
+        os.path.join(
+            os.path.expandvars(r"%LocalAppData%"),
+            r"Discord\*\Discord.exe"
+        ),
+        os.path.join(
+            os.path.expandvars(r"%LocalAppData%"),
+            r"DiscordPTB\*\DiscordPTB.exe"
+        ),
+    ]
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""

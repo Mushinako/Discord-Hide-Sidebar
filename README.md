@@ -62,12 +62,22 @@ optional arguments:
 
 ### The Discord client stutters/feels slower/uses more CPU
 
-The performance is expected to dip but it should not dip by much.
+The performance is expected to dip but it should not be noticeable.
 This is a side effect of debug mode. I'm not sure if this can be fixed.
 I try to make the JavaScript payload as efficient as possible.
+
 Please open an issue if the performance dip is severe.
 
 ### The toggle does not immediately show up when I switch to another server/conversation
 
 It takes some time for the code to detect that a new window is open.
 I'm not sure if this can be fixed using current method.
+
+### Can I get this to work on PTB version
+
+Possibly, given that PTB is more prone to change.
+Support is not guaranteed, but you're more than welcomed to try.
+You can also open an issue if the script does not work for PTB.
+
+If you have both PTB and non-PTB installed, the script will priorize non-PTB version.
+You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
