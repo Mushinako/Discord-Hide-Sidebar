@@ -2,11 +2,15 @@
 """Module that contains the objects for each operating system."""
 import os.path
 import subprocess
+import json
 from string import Template
 from glob import glob
-from typing import List, Optional
+from typing import List, Dict, Optional
 
-JS_FILE_NAME = "inject.js"
+import requests
+import websocket
+
+JS_FILE_NAME = "inject.min.js"
 
 
 class DiscordHideSidebar:
@@ -19,12 +23,14 @@ class DiscordHideSidebar:
         DEBUG_PARAMETER         [Template]: Parameter template to trigger Discord debugging mode
         MINIMIZED_PARAMETR           [str]: Parameter to ask Discord to start minimized
         URL                     [Template]: URL template of the debugging session
+        SOCKET_URL_KEY               [str]: Key name for socket URL
 
     Instance variables:
         discord_path [str]                       : Path of Discord executable
-        js_path      [str]                       : Path of JavaScript
+        data         [Dict]                      : Request data to be sent
+        data_json    [str]                       : Request data to be sent, but in JSON
         port         [int]                       : Port for the debugging session to run
-        debug_url    [str]                       : URL of the debugging session
+        url          [str]                       : URL of the debugging session
         minimized    [bool]                      : Whether to start Discord minimized
         process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
@@ -38,7 +44,8 @@ class DiscordHideSidebar:
     DEFAULT_PORT = 34726
     DEBUG_PARAMETER = Template("--remote-debugging-port=${port}")
     MINIMIZED_PARAMETER = "--start-minimized"
-    URL = Template("https://localhost:${port}/json")
+    URL = Template("http://localhost:${port}/json")
+    SOCKET_URL_KEY = "webSocketDebuggerUrl"
 
     def __new__(cls, *args, **kwargs):
         """Prevents `DiscordHideSidebar` from directly initialized"""
@@ -65,19 +72,36 @@ class DiscordHideSidebar:
         # Test path validity
         elif not os.path.isfile(self.discord_path):
             raise FileNotFoundError(f"{self.discord_path} is not a file!")
-        self.js_path = js_path or self.DEFAULT_JS_PATH
+        js_path_ = js_path or self.DEFAULT_JS_PATH
         # Test path validity
-        if not os.path.isfile(self.js_path):
-            raise FileNotFoundError(f"{self.js_path} is not a file!")
+        if not os.path.isfile(js_path_):
+            raise FileNotFoundError(f"{js_path_} is not a file!")
+        # Read JavaScript
+        js = self.get_js(js_path_)
+        # Assemble data
+        self.data = {
+            "id": 1,
+            "method": "Runtime.evaluate",
+            "params": {
+                "expression": js,
+                "objectGroup": "discordHideSidebar",
+                "userGesture": True,
+            },
+        }
+        self.data_json = json.dumps(self.data)
         self.port = port or self.DEFAULT_PORT
-        self.debug_url = self.URL.substitute(port=self.port)
+        self.url = self.URL.substitute(port=self.port)
         self.minimized = minimized
-        self.process: Optional[subprocess.Popen[str]] = None
+        self.process = None
 
     def run(self) -> None:
+        """Injection go brrrr"""
         self.kill_running()
         self.start_program()
-        pass
+        while self.process.poll() is None:
+            info = self.get_info()
+            self.inject(info)
+            pass
 
     def kill_running(self) -> None:
         raise NotImplementedError(
@@ -95,8 +119,50 @@ class DiscordHideSidebar:
         self.process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
         )
+
+    def get_info(self) -> List[Dict[str, str]]:
+        """Get window infos"""
+        response = requests.get(self.url)
+        response_json: List[Dict[str, str]] = response.json()
+        return response_json
+
+    def inject(self, info: List[Dict[str, str]]) -> None:
+        """Inject code!"""
+        for window in info:
+            socket_url = window[self.SOCKET_URL_KEY]
+            ws = websocket.create_connection(socket_url)
+            pass
+
+    @staticmethod
+    def quote(s: str) -> str:
+        """Quote string if it's not quoted
+
+        Args:
+            s [str]: String to be quoted
+
+        Returns:
+            [str]: Quoted string
+        """
+        if s[0] != "\"" and s[-1] != "\"":
+            return f"\"{s}\""
+        return s
+
+    @staticmethod
+    def get_js(js_path: str) -> str:
+        """Get JavaScript content in file
+
+        Args:
+            js_path [str]: Path of JavaScript file
+
+        Returns:
+            [str]: JavaScript code
+        """
+        with open(js_path, "r") as file_obj:
+            data = file_obj.read()
+        return data
 
 
 class WinDiscordHideSidebar(DiscordHideSidebar):
@@ -112,8 +178,8 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
         processes = subprocess.Popen(
             ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         _, err = processes.communicate()
-        if err is not None and b"\"Discord.exe\" not found" not in err:
+        if err and b"\"Discord.exe\" not found" not in err:
             raise OSError(err)

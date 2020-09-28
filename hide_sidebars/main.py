@@ -67,7 +67,6 @@ def parse_arguments() -> DiscordHideSidebarArgs:
     parser.add_argument(
         "-m", "--minimized",
         action="store_true",
-        nargs=0,
         help="Use this to start Discord minimized",
         dest="minimized"
     )
@@ -84,9 +83,9 @@ def main() -> None:
 
     args = parse_arguments()
 
-    operating_system = platform.platform().lower()
+    operating_system = platform.system().lower()
 
-    if operating_system.startswith("windows"):
+    if operating_system == "windows":
         runner = WinDiscordHideSidebar(
             args.discord_path,
             args.js_path,
