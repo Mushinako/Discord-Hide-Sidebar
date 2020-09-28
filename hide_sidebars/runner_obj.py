@@ -3,6 +3,7 @@
 import os.path
 import subprocess
 import json
+import logging
 from string import Template
 from glob import glob
 from typing import List, Dict, Optional
@@ -134,21 +135,27 @@ class DiscordHideSidebar:
         for window in info:
             socket_url = window[self.SOCKET_URL_KEY]
             ws = websocket.create_connection(socket_url)
-            pass
-
-    @staticmethod
-    def quote(s: str) -> str:
-        """Quote string if it's not quoted
-
-        Args:
-            s [str]: String to be quoted
-
-        Returns:
-            [str]: Quoted string
-        """
-        if s[0] != "\"" and s[-1] != "\"":
-            return f"\"{s}\""
-        return s
+            ws.send(self.data_json)
+            response = ws.recv()
+            title = window["title"]
+            if response is None:
+                logging.warn(f"{title} injection response empty")
+                continue
+            response_dict = json.loads(response)
+            if "result" not in response_dict:
+                logging.warn(f"{title} injection response has no 'result'")
+                continue
+            result = response_dict["result"]
+            if "exceptionDetails" in result:
+                exception_details = result["exceptionDetails"]
+                if "exception" not in exception_details:
+                    logging.warn(f"{title} injection failed but no details")
+                else:
+                    exception = exception_details["exception"]
+                    logging.warn(f"{title} injection failed by {exception}")
+                continue
+            logging.info(f"{title} injection successful")
+            continue
 
     @staticmethod
     def get_js(js_path: str) -> str:
@@ -161,7 +168,7 @@ class DiscordHideSidebar:
             [str]: JavaScript code
         """
         with open(js_path, "r") as file_obj:
-            data = file_obj.read()
+            data = file_obj.read().strip()
         return data
 
 
