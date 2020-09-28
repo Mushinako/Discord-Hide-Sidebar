@@ -48,7 +48,7 @@ python3 hideside.py -d "/usr/bin/discord"
 ### Advanced Usage
 
 ```text
-usage: hideside.py [-h] [-d DISCORD_PATH] [-j JS_PATH] [-p range65536] [-m]
+usage: hideside.py [-h] [-d DISCORD_PATH] [-j JS_PATH] [-p {0-65535}] [-m]
 
 Hide sidebar on Discord!
 
@@ -58,7 +58,7 @@ optional arguments:
                         Path of Discord executable
   -j JS_PATH, --js-path JS_PATH
                         Path of JavaScript to be executed
-  -p range(65536), --port range(65536)
+  -p {0-65535}, --port {0-65535}
                         Port for the debugging session to run
   -m, --minimized       Use this to start Discord minimized
 ```

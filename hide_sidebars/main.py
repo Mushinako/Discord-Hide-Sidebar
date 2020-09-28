@@ -61,7 +61,7 @@ def parse_arguments() -> DiscordHideSidebarArgs:
         type=int,
         choices=range(65536),
         help="Port for the debugging session to run",
-        metavar="range(65536)",
+        metavar="{0-65535}",
         dest="port"
     )
     parser.add_argument(
