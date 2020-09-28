@@ -2,6 +2,7 @@
 """Module that contains the objects for each operating system."""
 import os.path
 import subprocess
+from string import Template
 from glob import glob
 from typing import Optional
 
@@ -18,10 +19,11 @@ class DiscordHideSidebar:
         COMMAND_PARAMETERS           [str]: Command parameters to trigger Discord debugging mode
 
     Instance variables:
-        discord_path [str]: Path of Discord executable
-        js_path      [str]: Path of JavaScript
-        port         [int]: Port for the debugging session to run
-        debug_url    [str]: URL of the debugging session
+        discord_path [str]                       : Path of Discord executable
+        js_path      [str]                       : Path of JavaScript
+        port         [int]                       : Port for the debugging session to run
+        debug_url    [str]                       : URL of the debugging session
+        process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
 
     DEFAULT_DISCORD_PATH_PATTERN: str = ""
@@ -30,8 +32,9 @@ class DiscordHideSidebar:
         os.path.pardir,
         JS_FILE_NAME
     )
-    DEFAULT_PORT: str = 34726
-    COMMAND_PARAMETERS: str = "--remote-debugging-port={port}"
+    DEFAULT_PORT: int = 34726
+    COMMAND_PARAMETER = Template("--remote-debugging-port=${port}")
+    URL = Template("https://localhost:${port}/json")
 
     def __new__(cls, *args, **kwargs):
         """Prevents `DiscordHideSidebar` from directly initialized"""
@@ -63,14 +66,27 @@ class DiscordHideSidebar:
         if not os.path.isfile(self.js_path):
             raise FileNotFoundError(f"{self.js_path} is not a file!")
         self.port = port or self.DEFAULT_PORT
-        self.debug_url = f"https://localhost:{self.port}"
+        self.debug_url = self.URL.substitute(port=self.port)
+        self.process: Optional[subprocess.Popen[str]] = None
 
     def run(self) -> None:
         self.kill_running()
+        self.start_program()
 
     def kill_running(self) -> None:
         raise NotImplementedError(
             f"This class {type(self).__name__} is not fully implemented!"
+        )
+
+    def start_program(self) -> None:
+        """Start Discord program"""
+        self.process = subprocess.Popen(
+            [
+                self.discord_path,
+                self.COMMAND_PARAMETER.substitute(port=self.port)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
 
 
@@ -82,6 +98,7 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
     )
 
     def kill_running(self) -> None:
+        """Kill all running Discord processes"""
         DISCORD_EXECUTABLE_NAME = "Discord.exe"
         processes = subprocess.Popen(
             ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
