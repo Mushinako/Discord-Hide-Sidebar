@@ -19,7 +19,7 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 ## How to use
 
 When Discord is launched through the script, there'll be a `<` next to `?` on the top-right.
-Click it to toggle.
+Click `<` to toggle.
 
 ### Basic Usage
 
@@ -55,8 +55,10 @@ optional arguments:
 
 ### The Discord client stutters/feels slower/uses more CPU
 
+The performance is expected to dip but it should not dip by much.
 This is a side effect of debug mode. I'm not sure if this can be fixed.
 I try to make the JavaScript payload as efficient as possible.
+Please open an issue if the performance dip is severe.
 
 ### The toggle does not immediately show up when I switch to another server/conversation
 
