@@ -129,7 +129,8 @@ class DiscordHideSidebar:
         """Get window infos"""
         try:
             response = requests.get(self.url)
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
+            # Possibly the program has exited
             logging.warn(f"json from {self.url} connection error")
             return
         response_json: List[Dict[str, str]] = response.json()
@@ -142,7 +143,16 @@ class DiscordHideSidebar:
             try:
                 ws = websocket.create_connection(socket_url)
             except ConnectionRefusedError:
+                # Possibly the program has exited
                 logging.warn(f"websocket to {socket_url} refused")
+                continue
+            except ConnectionResetError:
+                # Possibly the program has crashed
+                logging.warn(f"websocket to {socket_url} reset")
+                continue
+            except websocket.WebSocketBadStatusException:
+                # Possibly the window is changed
+                logging.warn(f"websocket to {socket_url} bad status")
                 continue
             ws.send(self.data_json)
             response = ws.recv()

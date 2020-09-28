@@ -1,4 +1,4 @@
 "use strict";
-var membersClassName = "membersWrap-2h-GB4";
-var elements = document.getElementsByClassName(membersClassName);
-alert(`Hi ${elements.length}`);
+var sidebarClassName = "sidebar-2K8pFh";
+var elements = document.getElementsByClassName(sidebarClassName);
+var initName = "discordHideSidebarInitialized";
