@@ -174,7 +174,6 @@ class DiscordHideSidebar:
                     logging.warn(f"{title} injection failed by {exception}")
                 continue
             logging.info(f"{title} injection successful")
-            continue
 
     @staticmethod
     def get_js(js_path: str) -> str:
