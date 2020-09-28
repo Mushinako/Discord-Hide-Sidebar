@@ -6,7 +6,10 @@ I don't need the left sidebar all the time, so why not hide it when I need more 
 **This means that your personal information may be visible to other programs on your computer or others on the Internet.**
 **Do not use this script unless you know what you're doing!**
 
-**By using this script, you acknowledge this possibility.**
+**Using a customized client is also against Discord's TOS.**
+**This may result in your account being terminated.**
+
+**By using this script, you acknowledge above potentials.**
 **I will *not* be responsible for any damage caused by this script.**
 
 If you don't know how to mitigate this risk and are not willing to take it, please wait for Discord to implement this functionality.
