@@ -18,6 +18,9 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 
 ## How to use
 
+When Discord is launched through the script, there'll be a `<` next to `?` on the top-right.
+Click it to toggle.
+
 ### Basic Usage
 
 #### Windows
@@ -26,7 +29,7 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 
 #### Others
 
-* Currently, these platforms are not supported because I don't currently have access to a testing machine.
+Currently, these platforms are not supported because I don't currently have access to a testing machine.
 
 ### Advanced Usage
 
