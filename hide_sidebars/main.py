@@ -18,17 +18,20 @@ class DiscordHideSidebarArgs(Namespace):
         discord_path [Optional[str]]: Path of Discord executable
         js_path      [Optional[str]]: Path of JavaScript to be executed
         port         [Optional[int]]: Port for the debugging session to run
+        minimized    [bool]         : Whether to start Discord minimized
     """
 
     def __init__(
         self,
         discord_path: Optional[str],
         js_path: Optional[str],
-        port: Optional[int]
+        port: Optional[int],
+        minimized: bool
     ) -> None:
         self.discord_path = discord_path
         self.js_path = js_path
         self.port = port
+        self.minimized = minimized
 
 
 def parse_arguments() -> DiscordHideSidebarArgs:
@@ -61,6 +64,13 @@ def parse_arguments() -> DiscordHideSidebarArgs:
         help="Port for the debugging session to run",
         dest="port"
     )
+    parser.add_argument(
+        "-m", "--minimized",
+        action="store_true",
+        nargs=0,
+        help="Use this to start Discord minimized",
+        dest="minimized"
+    )
     args = parser.parse_args(namespace=DiscordHideSidebarArgs)
     return args
 
@@ -80,7 +90,8 @@ def main() -> None:
         runner = WinDiscordHideSidebar(
             args.discord_path,
             args.js_path,
-            args.port
+            args.port,
+            args.minimized
         )
         runner.run()
     else:

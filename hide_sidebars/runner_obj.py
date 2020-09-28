@@ -4,7 +4,7 @@ import os.path
 import subprocess
 from string import Template
 from glob import glob
-from typing import Optional
+from typing import List, Optional
 
 JS_FILE_NAME = "inject.js"
 
@@ -16,24 +16,28 @@ class DiscordHideSidebar:
         DEFAULT_DISCORD_PATH_PATTERN [str]: Glob pattern of default path of Discord executable
         DEFAULT_JS_PATH              [str]: Default path of JavaScript to be run
         DEFAULT_PORT                 [int]: Default port for the debugging session to run
-        COMMAND_PARAMETERS           [str]: Command parameters to trigger Discord debugging mode
+        DEBUG_PARAMETER         [Template]: Parameter template to trigger Discord debugging mode
+        MINIMIZED_PARAMETR           [str]: Parameter to ask Discord to start minimized
+        URL                     [Template]: URL template of the debugging session
 
     Instance variables:
         discord_path [str]                       : Path of Discord executable
         js_path      [str]                       : Path of JavaScript
         port         [int]                       : Port for the debugging session to run
         debug_url    [str]                       : URL of the debugging session
+        minimized    [bool]                      : Whether to start Discord minimized
         process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
 
     DEFAULT_DISCORD_PATH_PATTERN: str = ""
-    DEFAULT_JS_PATH: str = os.path.join(
+    DEFAULT_JS_PATH = os.path.join(
         os.path.dirname(__file__),
         os.path.pardir,
         JS_FILE_NAME
     )
-    DEFAULT_PORT: int = 34726
-    COMMAND_PARAMETER = Template("--remote-debugging-port=${port}")
+    DEFAULT_PORT = 34726
+    DEBUG_PARAMETER = Template("--remote-debugging-port=${port}")
+    MINIMIZED_PARAMETER = "--start-minimized"
     URL = Template("https://localhost:${port}/json")
 
     def __new__(cls, *args, **kwargs):
@@ -44,7 +48,7 @@ class DiscordHideSidebar:
             )
         return super().__new__(cls)
 
-    def __init__(self, discord_path: Optional[str], js_path: Optional[str], port: Optional[int]) -> None:
+    def __init__(self, discord_path: Optional[str], js_path: Optional[str], port: Optional[int], minimized: bool) -> None:
         if not self.DEFAULT_DISCORD_PATH_PATTERN:
             raise NotImplementedError(
                 f"This class {type(self).__name__} is not fully implemented!"
@@ -67,11 +71,13 @@ class DiscordHideSidebar:
             raise FileNotFoundError(f"{self.js_path} is not a file!")
         self.port = port or self.DEFAULT_PORT
         self.debug_url = self.URL.substitute(port=self.port)
+        self.minimized = minimized
         self.process: Optional[subprocess.Popen[str]] = None
 
     def run(self) -> None:
         self.kill_running()
         self.start_program()
+        pass
 
     def kill_running(self) -> None:
         raise NotImplementedError(
@@ -80,11 +86,14 @@ class DiscordHideSidebar:
 
     def start_program(self) -> None:
         """Start Discord program"""
+        command: List[str] = [
+            self.discord_path,
+            self.DEBUG_PARAMETER.substitute(port=self.port)
+        ]
+        if self.minimized:
+            command.append(self.MINIMIZED_PARAMETER)
         self.process = subprocess.Popen(
-            [
-                self.discord_path,
-                self.COMMAND_PARAMETER.substitute(port=self.port)
-            ],
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -106,5 +115,5 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
             stderr=subprocess.PIPE
         )
         _, err = processes.communicate()
-        if err is not None:
+        if err is not None and b"\"Discord.exe\" not found" not in err:
             raise OSError(err)
