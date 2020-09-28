@@ -31,6 +31,19 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 ### Advanced Usage
 
 ```text
+usage: hideside.py [-h] [-d DISCORD_PATH] [-j JS_PATH] [-p range65536] [-m]
+
+Hide sidebars on Discord!
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DISCORD_PATH, --discord-path DISCORD_PATH
+                        Path of Discord executable
+  -j JS_PATH, --js-path JS_PATH
+                        Path of JavaScript to be executed
+  -p range(65536), --port range(65536)
+                        Port for the debugging session to run
+  -m, --minimized       Use this to start Discord minimized
 ```
 
 ## Known issues
