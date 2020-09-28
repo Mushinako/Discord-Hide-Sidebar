@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 import requests
 import websocket
 
-JS_FILE_NAME = "inject.min.js"
+from hide_sidebars.action import ACTIONS
 
 
 class DiscordHideSidebar:
@@ -19,17 +19,13 @@ class DiscordHideSidebar:
 
     Class variables:
         DEFAULT_DISCORD_PATH_PATTERNS [List[str]]: Glob pattern of default path of Discord executable
-        DEFAULT_JS_PATH               [str]      : Default path of JavaScript to be run
         DEFAULT_PORT                  [int]      : Default port for the debugging session to run
         DEBUG_PARAMETER               [Template] : Parameter template to trigger Discord debugging mode
         MINIMIZED_PARAMETR            [str]      : Parameter to ask Discord to start minimized
         URL                           [Template] : URL template of the debugging session
-        SOCKET_URL_KEY                [str]      : Key name for socket URL
 
     Instance variables:
         discord_path [str]                       : Path of Discord executable
-        data         [Dict]                      : Request data to be sent
-        data_json    [str]                       : Request data to be sent, but in JSON
         port         [int]                       : Port for the debugging session to run
         url          [str]                       : URL of the debugging session
         minimized    [bool]                      : Whether to start Discord minimized
@@ -37,17 +33,10 @@ class DiscordHideSidebar:
     """
 
     DEFAULT_DISCORD_PATH_PATTERNS = [""]
-    DEFAULT_JS_PATH = os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir,
-        "js",
-        JS_FILE_NAME
-    )
     DEFAULT_PORT = 34726
     DEBUG_PARAMETER = Template("--remote-debugging-port=${port}")
     MINIMIZED_PARAMETER = "--start-minimized"
     URL = Template("http://localhost:${port}/json")
-    SOCKET_URL_KEY = "webSocketDebuggerUrl"
 
     def __new__(cls, *args, **kwargs):
         """Prevents `DiscordHideSidebar` from directly initialized"""
@@ -57,7 +46,7 @@ class DiscordHideSidebar:
             )
         return super().__new__(cls)
 
-    def __init__(self, discord_path: Optional[str], js_path: Optional[str], port: Optional[int], minimized: bool) -> None:
+    def __init__(self, discord_path: Optional[str], port: Optional[int], minimized: bool) -> None:
         if not self.DEFAULT_DISCORD_PATH_PATTERNS[0]:
             raise NotImplementedError(
                 f"This class {type(self).__name__} is not fully implemented!"
@@ -78,26 +67,10 @@ class DiscordHideSidebar:
                 raise FileNotFoundError(
                     f"No Discord executable found in default paths {self.DEFAULT_DISCORD_PATH_PATTERNS}"
                 )
-        # Test path validity
+        # Test Discord path validity
         elif not os.path.isfile(self.discord_path):
             raise FileNotFoundError(f"{self.discord_path} is not a file!")
-        js_path_ = js_path or self.DEFAULT_JS_PATH
-        # Test path validity
-        if not os.path.isfile(js_path_):
-            raise FileNotFoundError(f"{js_path_} is not a file!")
-        # Read JavaScript
-        js = self.get_js(js_path_)
-        # Assemble data
-        self.data = {
-            "id": 1,
-            "method": "Runtime.evaluate",
-            "params": {
-                "expression": js,
-                "objectGroup": "discordHideSidebar",
-                "userGesture": True,
-            },
-        }
-        self.data_json = json.dumps(self.data)
+        # Other variables
         self.port = port or self.DEFAULT_PORT
         self.url = self.URL.substitute(port=self.port)
         self.minimized = minimized
@@ -107,11 +80,15 @@ class DiscordHideSidebar:
         """Injection go brrrr"""
         self.kill_running()
         self.start_program()
+        while (info := self.get_info()) is None:
+            pass
+        while not ACTIONS.init.run(info[0]):
+            pass
         while self.process.poll() is None:
             info = self.get_info()
             if info is None:
                 break
-            self.inject(info)
+            ACTIONS.inject.run(info)
 
     def kill_running(self) -> None:
         raise NotImplementedError(
@@ -134,68 +111,34 @@ class DiscordHideSidebar:
         )
 
     def get_info(self) -> Optional[List[Dict[str, str]]]:
-        """Get window infos"""
-        try:
-            response = requests.get(self.url)
-        except requests.exceptions.ConnectionError:
-            # Possibly the program has exited
-            logging.warn(f"json from {self.url} connection error")
+        """Get window infos
+
+        Returns:
+            [Optional[List[Dict[str, str]]]]: The response JSON object, if any
+        """
+        response = self.get_req(self.url)
+        if response is None:
             return
         response_json: List[Dict[str, str]] = response.json()
         return response_json
 
-    def inject(self, info: List[Dict[str, str]]) -> None:
-        """Inject code!"""
-        for window in info:
-            socket_url = window[self.SOCKET_URL_KEY]
-            try:
-                ws = websocket.create_connection(socket_url)
-            except ConnectionRefusedError:
-                # Possibly the program has exited
-                logging.warn(f"websocket to {socket_url} refused")
-                continue
-            except ConnectionResetError:
-                # Possibly the program has crashed
-                logging.warn(f"websocket to {socket_url} reset")
-                continue
-            except websocket.WebSocketBadStatusException:
-                # Possibly the window is changed
-                logging.warn(f"websocket to {socket_url} bad status")
-                continue
-            ws.send(self.data_json)
-            response = ws.recv()
-            title = f"\"{window['title']}\""
-            if response is None:
-                logging.warn(f"{title} injection response empty")
-                continue
-            response_dict = json.loads(response)
-            if "result" not in response_dict:
-                logging.warn(f"{title} injection response has no 'result'")
-                continue
-            result = response_dict["result"]
-            if "exceptionDetails" in result:
-                exception_details = result["exceptionDetails"]
-                if "exception" not in exception_details:
-                    logging.warn(f"{title} injection failed but no details")
-                else:
-                    exception = exception_details["exception"]
-                    logging.warn(f"{title} injection failed by {exception}")
-                continue
-            logging.info(f"{title} injection successful")
-
     @staticmethod
-    def get_js(js_path: str) -> str:
-        """Get JavaScript content in file
+    def get_req(url: str) -> Optional[requests.Response]:
+        """GET URL, with proper error handling
 
         Args:
-            js_path [str]: Path of JavaScript file
+            url [str]: URL to GET
 
         Returns:
-            [str]: JavaScript code
+            [Optional[requests.Response]]: Response object, if any
         """
-        with open(js_path, "r") as file_obj:
-            data = file_obj.read().strip()
-        return data
+        try:
+            response = requests.get(url)
+        except requests.exceptions.ConnectionError:
+            # Possibly the program has exited
+            logging.warn(f"json from {url} connection error")
+            return
+        return response
 
 
 class WinDiscordHideSidebar(DiscordHideSidebar):

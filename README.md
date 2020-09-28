@@ -6,7 +6,7 @@ I don't need the left sidebar all the time, so why not hide it when I need more 
 **This means that your personal information may be visible to other programs on your computer or others on the Internet.**
 **Do not use this script unless you know what you're doing!**
 
-**Using a customized client is also against Discord's TOS.**
+**Using a customized client is also against Discord's ToS.**
 **This may result in your account being terminated.**
 
 **By using this script, you acknowledge above potentials.**
@@ -53,7 +53,7 @@ python3 hideside.py -d "/usr/bin/discord"
 ### Advanced Usage
 
 ```text
-usage: hideside.py [-h] [-d DISCORD_PATH] [-j JS_PATH] [-p {0-65535}] [-m]
+usage: hideside.py [-h] [-d DISCORD_PATH] [-p {0-65535}] [-m]
 
 Hide sidebar on Discord!
 
@@ -61,8 +61,6 @@ optional arguments:
   -h, --help            show this help message and exit
   -d DISCORD_PATH, --discord-path DISCORD_PATH
                         Path of Discord executable
-  -j JS_PATH, --js-path JS_PATH
-                        Path of JavaScript to be executed
   -p {0-65535}, --port {0-65535}
                         Port for the debugging session to run
   -m, --minimized       Use this to start Discord minimized
