@@ -32,6 +32,13 @@ Click `<` to toggle.
 #### Others
 
 Currently, these platforms are not supported because I don't currently have access to a testing machine.
+However, it's possible the script will work, but you'll have to provide the location of Discord executable.
+
+For example, for Discord installed in `/usr/bin/discord`, run:
+
+```bash
+python3 hideside.py -d "/usr/bin/discord"
+```
 
 ### Advanced Usage
 

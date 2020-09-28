@@ -11,7 +11,7 @@ LOG_LEVEL = logging.DEBUG
 if __name__ == "__main__":
     logging.basicConfig(
         filename=LOG_FILE,
-        filemode="a",
+        filemode="w",
         datefmt='%H:%M:%S',
         level=LOG_LEVEL
     )
