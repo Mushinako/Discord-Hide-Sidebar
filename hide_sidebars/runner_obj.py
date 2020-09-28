@@ -101,8 +101,9 @@ class DiscordHideSidebar:
         self.start_program()
         while self.process.poll() is None:
             info = self.get_info()
+            if info is None:
+                break
             self.inject(info)
-            pass
 
     def kill_running(self) -> None:
         raise NotImplementedError(
@@ -124,9 +125,13 @@ class DiscordHideSidebar:
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
         )
 
-    def get_info(self) -> List[Dict[str, str]]:
+    def get_info(self) -> Optional[List[Dict[str, str]]]:
         """Get window infos"""
-        response = requests.get(self.url)
+        try:
+            response = requests.get(self.url)
+        except ConnectionError:
+            logging.warn(f"json from {self.url} connection error")
+            return
         response_json: List[Dict[str, str]] = response.json()
         return response_json
 
@@ -134,10 +139,14 @@ class DiscordHideSidebar:
         """Inject code!"""
         for window in info:
             socket_url = window[self.SOCKET_URL_KEY]
-            ws = websocket.create_connection(socket_url)
+            try:
+                ws = websocket.create_connection(socket_url)
+            except ConnectionRefusedError:
+                logging.warn(f"websocket to {socket_url} refused")
+                continue
             ws.send(self.data_json)
             response = ws.recv()
-            title = window["title"]
+            title = f"\"{window['title']}\""
             if response is None:
                 logging.warn(f"{title} injection response empty")
                 continue
