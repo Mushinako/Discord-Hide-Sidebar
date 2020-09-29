@@ -76,11 +76,6 @@ I try to make the JavaScript payload as efficient as possible.
 
 Please open an issue if the performance dip is severe.
 
-### When I switch to another server/conversation, it takes some time for the toggle to show up and the side bar to hide
-
-It takes some time for the code to detect that a new window is open.
-I'm not sure if this can be fixed using current method.
-
 ### Can I get this to work on PTB version
 
 Possibly, given that PTB is more prone to change.
@@ -92,4 +87,6 @@ You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
 
 ## License
 
-<p xmlns:dct="http://purl.org/dc/terms/" xmlns:cc="http://creativecommons.org/ns#" class="license-text"><a rel="cc:attributionURL" property="dct:title" href="https://github.com/Mushinako/Discord-Hide-Sidebar">Discord Hide Sidebar</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://github.com/Mushinako">Mushinako</a> is licensed under <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" /><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" /><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" /></a></p>
+[Discord Hide Sidebar](https://github.com/Mushinako/Discord-Hide-Sidebar) by [Mushinako](https://github.com/Mushinako) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0)
+
+![cc](https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1) ![by](https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1) ![sa](https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1)
