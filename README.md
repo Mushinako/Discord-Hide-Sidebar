@@ -75,6 +75,11 @@ I try to make the JavaScript payload as efficient as possible.
 
 Please open an issue if the performance dip is severe.
 
+### The toggle does not automatically show up when Discord boots
+
+I'm not sure what the cause of this is and am looking into it.
+If it doesn't show up, switch to another server and switch back.
+
 ### Can I get this to work on PTB version
 
 Possibly, given that PTB is more prone to change.
