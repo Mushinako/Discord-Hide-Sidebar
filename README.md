@@ -92,5 +92,5 @@ You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
 
 ### Can my configuration be saved
 
-This is definitely doable, maybe not trivially, given `window.localStorage` is not available.
+This is definitely doable.
 I have not implemented it due to lack of time and its potential to slow everything down.
