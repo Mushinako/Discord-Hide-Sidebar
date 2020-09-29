@@ -13,6 +13,10 @@ var post = '"></path></svg>';
 var svgLeft = pre + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + post;
 var svgRight = pre + "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" + post;
 
+var mutConfig = { childList: true };
+
+var g = false;      // Whether first run is successful
+
 /**
  * Main function to be run for each server
  */
@@ -57,6 +61,7 @@ var dhsb = async () => {
     });
     // Append
     toolbar.appendChild(div);
+    g = true;
 }
 
 /**
@@ -126,12 +131,34 @@ var clearCache = () => cache.keys().then(keys => {
  * Check if the click may switch server
  * @param {MouseEvent} ev The `click` event
  */
-var checkClick = async (ev) => {
-    debugger;
-    const serverLists = document.getElementsByClassName(vcn);
-    if (serverLists.length === 1 && serverLists[0].contains(ev.target)) dhsb();
+// var checkClick = async (ev) => {
+//     debugger;
+//     const serverLists = document.getElementsByClassName(vcn);
+//     if (serverLists.length === 1 && serverLists[0].contains(ev.target)) dhsb();
+// };
+
+/**
+ * On mutation, call `dhsb`
+ */
+var checkMut = () => { dhsb(); };
+
+/**
+ * Get sidebar as `MutationObserver` target
+ * @returns {Element} The sidebar element
+ * @throws {ReferenceError} The window is not the one we want
+ */
+var getMutTarget = () => {
+    const sidebars = document.getElementsByClassName(scn);
+    if (sidebars.length !== 1) throw new ReferenceError("Invalid window");
+    return sidebars[0];
 };
 
+/**
+ * First run, has to be `async` function because the use of `await`
+ */
+var firstRun = async () => { while (!g) await dhsb(); };
+
+// Caching
 (async () => {
     // Check if persistent cache is available
     persist = await navigator.storage.persist();
@@ -140,10 +167,17 @@ var checkClick = async (ev) => {
     cache = await caches.open(cn);
 })();
 
-// Check all clicks for potential server switch
-document.addEventListener("click", ev => checkClick(ev));
+// Get observee (sidebar)
+var mutTarget = getMutTarget();
+while (!mutTarget) {
+    const sidebars = document.getElementsByClassName(scn);
+    if (sidebars.length !== 1) continue;
+    mutTarget = sidebars[0];
+}
 
-// For some reason I have to add this for it to work now?!?
-setTimeout(() => {
-    dhsb();
-}, 1000);
+// Observe changes
+var mutOb = new MutationObserver(checkMut);
+mutOb.observe(mutTarget, mutConfig);
+
+// First run
+firstRun();

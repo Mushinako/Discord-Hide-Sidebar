@@ -71,12 +71,14 @@ class Action:
         Returns:
             [int]: Error codes: 0 is successful, 1 is error, -1 is unknown
         """
+        logging.debug(f'\"{window["title"]}\"')
         if window["title"].lower() in self.TITLE_BLACKLIST:
+            logging.debug("1 Blacklist")
             return 1
         socket_url = window[self.SOCKET_URL_KEY]
         ws = self.ws_req(socket_url)
         if ws is None:
-            return False
+            return 1
         ws.send(self.payload)
         response: Optional[str] = ws.recv()
         err_code = self.parse_ws_response(response, window)

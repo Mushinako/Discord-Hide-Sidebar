@@ -80,7 +80,8 @@ class DiscordHideSidebar:
         self.kill_running()
         self.start_program()
         while True:
-            if (info := self.get_info()) is None:
+            info = self.get_info()
+            if info is None:
                 continue
             for window in info:
                 if ACTIONS.init.run(window):
@@ -88,8 +89,7 @@ class DiscordHideSidebar:
             else:
                 continue
             break
-        while self.process.poll() is None:
-            pass
+        self.process.wait()
 
     def kill_running(self) -> None:
         raise NotImplementedError(
