@@ -6,8 +6,8 @@ I don't need the left sidebar all the time, so why not hide it when I need more 
 **This means that your personal information may be visible to other programs on your computer or others on the Internet.**
 **Do not use this script unless you know what you're doing!**
 
-**Using a customized client is also against Discord's ToS.**
-**This may result in your account being terminated.**
+**Using a customized client may also result in your account's termination.**
+
 
 **By using this script, you acknowledge above potentials.**
 **I will *not* be responsible for any damage caused by this script.**
