@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Main module. Decides which functions to call"""
 
-import os.path
 import platform
 from argparse import ArgumentParser, Namespace
 from typing import Optional

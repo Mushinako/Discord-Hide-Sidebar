@@ -5,7 +5,7 @@ import os.path
 import json
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 import websocket
 
@@ -16,7 +16,6 @@ JS_DIR_PATH = os.path.join(
 )
 JS_NAMES = {
     "init": "init.min.js",
-    "inject": "inject.min.js",
 }
 
 
@@ -33,6 +32,9 @@ class Action:
     """
 
     SOCKET_URL_KEY = "webSocketDebuggerUrl"
+    TITLE_BLACKLIST = [
+        "discord updater",
+    ]
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -69,6 +71,8 @@ class Action:
         Returns:
             [int]: Error codes: 0 is successful, 1 is error, -1 is unknown
         """
+        if window["title"].lower() in self.TITLE_BLACKLIST:
+            return 1
         socket_url = window[self.SOCKET_URL_KEY]
         ws = self.ws_req(socket_url)
         if ws is None:
@@ -176,36 +180,15 @@ class InitAction(Action):
         return err_code == 0
 
 
-class InjectAction(Action):
-    """Injection action"""
-
-    def __init__(self) -> None:
-        super().__init__("inject")
-
-    def run(self, info: List[Dict[str, str]]) -> None:
-        """Call the functions
-
-        Args:
-            info [List[Dict[str, str]]]: List of windows infos
-        """
-        for window in info:
-            err_code = self.ws_req_and_res(window)
-            if err_code == 1:
-                ACTIONS.init.run(window)
-                self.ws_req_and_res(window)
-
-
 @dataclass
 class Actions:
     """A collection of actions
 
     Properties:
         init   [InitAction]  : `init` action
-        inject [InjectAction]: `inject` action
     """
 
     init: InitAction
-    inject: InjectAction
 
 
-ACTIONS = Actions(InitAction(), InjectAction())
+ACTIONS = Actions(InitAction())

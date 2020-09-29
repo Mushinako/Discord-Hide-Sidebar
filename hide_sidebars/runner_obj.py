@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Module that contains the objects for each operating system."""
+
 import os.path
 import subprocess
-import json
 import logging
 from string import Template
 from glob import glob
 from typing import List, Dict, Optional
 
 import requests
-import websocket
 
 from hide_sidebars.action import ACTIONS
 
@@ -80,15 +79,17 @@ class DiscordHideSidebar:
         """Injection go brrrr"""
         self.kill_running()
         self.start_program()
-        while (info := self.get_info()) is None:
-            pass
-        while not ACTIONS.init.run(info[0]):
-            pass
+        while True:
+            if (info := self.get_info()) is None:
+                continue
+            for window in info:
+                if ACTIONS.init.run(window):
+                    break
+            else:
+                continue
+            break
         while self.process.poll() is None:
-            info = self.get_info()
-            if info is None:
-                break
-            ACTIONS.inject.run(info)
+            pass
 
     def kill_running(self) -> None:
         raise NotImplementedError(

@@ -6,6 +6,7 @@ var cn = "hide-side";           // Hidden flag, cache name
 var icn = "hide-sidebar-init";  // Initiation flag
 var bcn = "toolbar-1t6TWx";     // Banner class name
 var scn = "sidebar-2K8pFh";     // Sidebar class name
+var vcn = "wrapper-1Rf91z";     // Server list class name
 
 var pre = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
 var post = '"></path></svg>';
@@ -117,7 +118,19 @@ var setCache = val => {
 /**
  * Clears all cache. Only used for debugging
  */
-var clearCache = () => cache.keys().then(keys => { for (const req of keys) cache.delete(req) });
+var clearCache = () => cache.keys().then(keys => {
+    for (const req of keys) cache.delete(req);
+});
+
+/**
+ * Check if the click may switch server
+ * @param {MouseEvent} ev The `click` event
+ */
+var checkClick = async (ev) => {
+    debugger;
+    const serverLists = document.getElementsByClassName(vcn);
+    if (serverLists.length === 1 && serverLists[0].contains(ev.target)) dhsb();
+};
 
 (async () => {
     // Check if persistent cache is available
@@ -126,3 +139,11 @@ var clearCache = () => cache.keys().then(keys => { for (const req of keys) cache
     // Make the cache object
     cache = await caches.open(cn);
 })();
+
+// Check all clicks for potential server switch
+document.addEventListener("click", ev => checkClick(ev));
+
+// For some reason I have to add this for it to work now?!?
+setTimeout(() => {
+    dhsb();
+}, 1000);
