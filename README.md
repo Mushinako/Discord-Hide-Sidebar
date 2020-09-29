@@ -65,7 +65,7 @@ optional arguments:
   -m, --minimized       Use this to start Discord minimized
 ```
 
-## Known issues
+## FAQ
 
 ### The Discord client stutters/feels slower/uses more CPU
 
@@ -73,12 +73,7 @@ The performance is expected to dip but it should not be noticeable.
 This is a side effect of debug mode. I'm not sure if this can be fixed.
 I try to make the JavaScript payload as efficient as possible.
 
-Please open an issue if the performance dip is severe.
-
-### The toggle does not automatically show up when Discord boots
-
-I'm not sure what the cause of this is and am looking into it.
-If it doesn't show up, switch to another server and switch back.
+Please open an issue if the performance dip is severe, as this may indicate bugs in the code.
 
 ### Can I get this to work on PTB version
 
