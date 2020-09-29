@@ -76,7 +76,7 @@ I try to make the JavaScript payload as efficient as possible.
 
 Please open an issue if the performance dip is severe.
 
-### The toggle does not immediately show up when I switch to another server/conversation
+### When I switch to another server/conversation, it takes some time for the toggle to show up and the side bar to hide
 
 It takes some time for the code to detect that a new window is open.
 I'm not sure if this can be fixed using current method.
@@ -89,8 +89,3 @@ You can also open an issue if the script does not work for PTB.
 
 If you have both PTB and non-PTB installed, the script will priorize non-PTB version.
 You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
-
-### Can my configuration be saved
-
-This is definitely doable.
-I have not implemented it due to lack of time and its potential to slow everything down.
