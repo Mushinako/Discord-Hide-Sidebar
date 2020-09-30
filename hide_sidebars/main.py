@@ -6,11 +6,11 @@ from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
 from typing import Union, Optional
 
-from hide_sidebars.runner_obj import WinDiscordHideSidebar
+from hide_sidebars.runner_obj import WinRunner
 
 
 @dataclass
-class DiscordHideSidebarArgs(Namespace):
+class RunnerArgs(Namespace):
     """Specific `Namespace` object for arguments of this program
     Mainly used for type notation
 
@@ -29,7 +29,7 @@ class DiscordHideSidebarArgs(Namespace):
     ptb: bool
 
 
-def parse_arguments() -> DiscordHideSidebarArgs:
+def parse_arguments() -> RunnerArgs:
     """Parse command line arguments
 
     Returns:
@@ -73,7 +73,7 @@ def parse_arguments() -> DiscordHideSidebarArgs:
         help="Use this to indicate Discord is PTB",
         dest="ptb"
     )
-    args = parser.parse_args(namespace=DiscordHideSidebarArgs)
+    args = parser.parse_args(namespace=RunnerArgs)
     return args
 
 
@@ -86,10 +86,10 @@ def main() -> None:
 
     args = parse_arguments()
 
-    operating_system = platform.system().lower()
+    operating_system = platform.system()
 
-    if operating_system == "windows":
-        runner = WinDiscordHideSidebar(
+    if operating_system == "Windows":
+        runner = WinRunner(
             args.discord_path,
             args.port,
             args.boot,
@@ -97,7 +97,9 @@ def main() -> None:
             args.ptb
         )
         runner.run()
-    else:
-        raise NotImplementedError(
-            f"Your operating system \"{platform.platform()}\" is not yet supported"
-        )
+        return
+    if operating_system == "Darwin":
+        runner
+    raise NotImplementedError(
+        f"Your operating system \"{platform.platform()}\" is not yet supported"
+    )
