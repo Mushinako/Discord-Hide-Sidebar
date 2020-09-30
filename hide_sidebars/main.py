@@ -3,30 +3,30 @@
 
 import platform
 from argparse import ArgumentParser, Namespace
-from typing import Optional
+from dataclasses import dataclass
+from typing import Union, Optional
 
 from hide_sidebars.runner_obj import WinDiscordHideSidebar
 
 
+@dataclass
 class DiscordHideSidebarArgs(Namespace):
     """Specific `Namespace` object for arguments of this program
     Mainly used for type notation
 
     Instance variables:
-        discord_path [Optional[str]]: Path of Discord executable
-        port         [Optional[int]]: Port for the debugging session to run
-        minimized    [bool]         : Whether to start Discord minimized
+        discord_path  [Optional[str]]: Path of Discord executable
+        port          [Optional[int]]: Port for the debugging session to run
+        boot [Union[bool, str, None]]: Whether to patch registry to override boot, and optionally the script path
+        minimized     [bool]         : Whether to start Discord minimized
+        ptb           [bool]         : Whether Discord is PTB
     """
 
-    def __init__(
-        self,
-        discord_path: Optional[str],
-        port: Optional[int],
-        minimized: bool
-    ) -> None:
-        self.discord_path = discord_path
-        self.port = port
-        self.minimized = minimized
+    discord_path: Optional[str]
+    port: Optional[int]
+    boot: Union[bool, str, None]
+    minimized: bool
+    ptb: bool
 
 
 def parse_arguments() -> DiscordHideSidebarArgs:
@@ -54,10 +54,24 @@ def parse_arguments() -> DiscordHideSidebarArgs:
         dest="port"
     )
     parser.add_argument(
+        "-b", "--boot",
+        nargs="?",
+        const=True,
+        default=None,
+        help="Use this to patch registry to override boot. Specify script path as necessary",
+        dest="boot"
+    )
+    parser.add_argument(
         "-m", "--minimized",
         action="store_true",
         help="Use this to start Discord minimized",
         dest="minimized"
+    )
+    parser.add_argument(
+        "-t", "--ptb",
+        action="store_true",
+        help="Use this to indicate Discord is PTB",
+        dest="ptb"
     )
     args = parser.parse_args(namespace=DiscordHideSidebarArgs)
     return args
@@ -78,7 +92,9 @@ def main() -> None:
         runner = WinDiscordHideSidebar(
             args.discord_path,
             args.port,
-            args.minimized
+            args.boot,
+            args.minimized,
+            args.ptb
         )
         runner.run()
     else:
