@@ -233,7 +233,7 @@ class WinRunner(Runner):
         out, err = processes.communicate()
         logging.debug(out)
         logging.warn(err)
-        if err and b"\"Discord.exe\" not found" not in err:
+        if err and f"\"{DISCORD_EXECUTABLE_NAME}\" not found".encode("utf-8") not in err:
             raise OSError(err)
 
     def patch_boot(self) -> None:
