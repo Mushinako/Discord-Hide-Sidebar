@@ -6,12 +6,15 @@ var icn = "hide-sidebar-init";
 var bcn = "toolbar-1t6TWx";
 var scn = "sidebar-2K8pFh";
 var vcn = "wrapper-1Rf91z";
+var kcn = "key-el";
 var mConf = { childList: true };
 var g = false;
 var pre = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
 var post = '"></path></svg>';
 var svgLeft = pre + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + post;
 var svgRight = pre + "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" + post;
+var btnDiv;
+var sideEl;
 var dhsb = async () => {
     const toolbars = document.getElementsByClassName(bcn);
     if (toolbars.length !== 1)
@@ -23,36 +26,48 @@ var dhsb = async () => {
     if (elements.length !== 1)
         return;
     toolbar.classList.add(icn);
-    const div = document.createElement("div");
-    div.classList.add("iconWrapper-2OrFZ1", "clickable-3rdHwn", "focusable-1YV_-H");
-    div.setAttribute("role", "button");
-    div.setAttribute("aria-label", "Toggle Sidebar");
-    div.setAttribute("tabindex", "0");
-    const el = elements[0];
+    btnDiv = document.createElement("div");
+    btnDiv.classList.add("iconWrapper-2OrFZ1", "clickable-3rdHwn", "focusable-1YV_-H");
+    btnDiv.setAttribute("role", "button");
+    btnDiv.setAttribute("aria-label", "Toggle Sidebar");
+    btnDiv.setAttribute("tabindex", "0");
+    sideEl = elements[0];
     if (await getCache() === "1")
-        hide(div, el);
+        hideSide();
     else
-        show(div, el);
-    div.addEventListener("click", () => {
-        if (div.classList.contains(cn))
-            show(div, el);
+        showSide();
+    btnDiv.addEventListener("click", () => {
+        if (btnDiv.classList.contains(cn))
+            showSide();
         else
-            hide(div, el);
+            hideSide();
     });
-    toolbar.appendChild(div);
+    toolbar.appendChild(btnDiv);
+    if (!document.body.classList.contains(kcn)) {
+        document.addEventListener("keydown", keyEl);
+        document.body.classList.add(kcn);
+    }
     g = true;
 };
-var hide = (div, el) => {
-    div.classList.add(cn);
-    div.innerHTML = svgRight;
-    el.style.display = "none";
+var hideSide = () => {
+    btnDiv.classList.add(cn);
+    btnDiv.innerHTML = svgRight;
+    sideEl.style.display = "none";
     setCache("1");
 };
-var show = (div, el) => {
-    div.classList.remove(cn);
-    div.innerHTML = svgLeft;
-    el.style.display = "";
+var showSide = () => {
+    btnDiv.classList.remove(cn);
+    btnDiv.innerHTML = svgLeft;
+    sideEl.style.display = "";
     setCache("0");
+};
+var keyEl = (ev) => {
+    if (ev.ctrlKey && ev.key === "l") {
+        if (btnDiv.classList.contains(cn))
+            showSide();
+        else
+            hideSide();
+    }
 };
 var getServerUrl = () => {
     const paths = location.pathname.split("/");
@@ -97,11 +112,5 @@ var firstRun = async () => {
     cache = await caches.open(cn);
 })();
 var mTar = getMTar();
-while (!mTar) {
-    const sidebars = document.getElementsByClassName(scn);
-    if (sidebars.length !== 1)
-        continue;
-    mTar = sidebars[0];
-}
 new MutationObserver(checkMut).observe(mTar, mConf);
 firstRun();
