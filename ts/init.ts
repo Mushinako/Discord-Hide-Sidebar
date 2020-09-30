@@ -1,5 +1,6 @@
 "use strict";
 var persist: boolean;
+// Use `Cache` because `localStorage` does not exist
 var cache: Cache;
 
 var cn = "hide-side";           // Hidden flag, cache name
