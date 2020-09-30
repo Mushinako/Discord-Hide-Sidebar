@@ -8,6 +8,8 @@ var bcn = "toolbar-1t6TWx";     // Banner class name
 var scn = "sidebar-2K8pFh";     // Sidebar class name
 var vcn = "wrapper-1Rf91z";     // Server list class name
 
+var kcn = "key-el";     // Keyboard event listener enabled
+
 var mConf = { childList: true };
 
 var g = false;      // Whether first run is successful
@@ -16,6 +18,9 @@ var pre = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentCo
 var post = '"></path></svg>';
 var svgLeft = pre + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + post;
 var svgRight = pre + "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" + post;
+
+var btnDiv: HTMLDivElement;
+var sideEl: HTMLElement;
 
 /**
  * Main function to be run for each server
@@ -33,47 +38,60 @@ var dhsb = async (): Promise<void> => {
     // Mark banner modified
     toolbar.classList.add(icn);
     // Create toggle
-    const div = document.createElement("div");
-    div.classList.add("iconWrapper-2OrFZ1", "clickable-3rdHwn", "focusable-1YV_-H");
-    div.setAttribute("role", "button");
-    div.setAttribute("aria-label", "Toggle Sidebar");
-    div.setAttribute("tabindex", "0");
+    btnDiv = document.createElement("div");
+    btnDiv.classList.add("iconWrapper-2OrFZ1", "clickable-3rdHwn", "focusable-1YV_-H");
+    btnDiv.setAttribute("role", "button");
+    btnDiv.setAttribute("aria-label", "Toggle Sidebar");
+    btnDiv.setAttribute("tabindex", "0");
     // Get data from cache
-    const el = <HTMLElement>elements[0];
-    if (await getCache() === "1") hide(div, el);
-    else show(div, el);
+    sideEl = <HTMLElement>elements[0];
+    if (await getCache() === "1") hideSide();
+    else showSide();
     // Click event
-    div.addEventListener("click", () => {
-        if (div.classList.contains(cn)) show(div, el);
-        else hide(div, el);
+    btnDiv.addEventListener("click", () => {
+        if (btnDiv.classList.contains(cn)) showSide();
+        else hideSide();
     });
     // Append
-    toolbar.appendChild(div);
+    toolbar.appendChild(btnDiv);
+    // Keyboard event
+    if (!document.body.classList.contains(kcn)) {
+        document.addEventListener("keydown", keyEl);
+        document.body.classList.add(kcn);
+    }
+    // Set success indicator
     g = true;
 }
 
 /**
  * Hiding the sidebar
- * @param {HTMLDivElement} div The div for the button to be in
- * @param {HTMLElement}    el  The element that contains the sidebar
  */
-var hide = (div: HTMLDivElement, el: HTMLElement): void => {
-    div.classList.add(cn);
-    div.innerHTML = svgRight;
-    el.style.display = "none";
+var hideSide = (): void => {
+    btnDiv.classList.add(cn);
+    btnDiv.innerHTML = svgRight;
+    sideEl.style.display = "none";
     setCache("1");
 };
 
 /**
  * Showing the sidebar
- * @param {HTMLDivElement} div The div for the button to be in
- * @param {HTMLElement}    el  The element that contains the sidebar
  */
-var show = (div: HTMLDivElement, el: HTMLElement): void => {
-    div.classList.remove(cn);
-    div.innerHTML = svgLeft;
-    el.style.display = "";
+var showSide = (): void => {
+    btnDiv.classList.remove(cn);
+    btnDiv.innerHTML = svgLeft;
+    sideEl.style.display = "";
     setCache("0");
+};
+
+/**
+ * Keyboard event handler
+ * @param {KeyboardEvent} ev The `keydown` event
+ */
+var keyEl = (ev: KeyboardEvent): void => {
+    if (ev.ctrlKey && ev.key === "l") {
+        if (btnDiv.classList.contains(cn)) showSide();
+        else hideSide();
+    }
 };
 
 /**
@@ -147,11 +165,6 @@ var firstRun = async (): Promise<void> => { while (!g) await dhsb(); };
 
 // Get observee (sidebar)
 var mTar = getMTar();
-while (!mTar) {
-    const sidebars = document.getElementsByClassName(scn);
-    if (sidebars.length !== 1) continue;
-    mTar = sidebars[0];
-}
 
 // Observe changes
 new MutationObserver(checkMut).observe(mTar, mConf);

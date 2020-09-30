@@ -26,7 +26,9 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 ## How to use
 
 When Discord is launched through the script, there'll be a `<` next to `?` on the top-right.
-Click `<` to toggle. The toggle hides friends list and channels list
+Click `<` to toggle. The toggle hides friends list and channels list.
+
+Alternatively, use <kbd>Ctrl</kbd> + <kbd>l</kbd>
 
 ![Example](asset/eg.gif)
 
