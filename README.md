@@ -67,7 +67,8 @@ optional arguments:
   -b [BOOT], --boot [BOOT]
                         Use this to patch registry to override boot. Specify script path as necessary
   -m, --minimized       Use this to start Discord minimized
-  -t, --ptb             Use this to indicate Discord is PTB```
+  -t, --ptb             Use this to indicate Discord is PTB
+```
 
 ## FAQ
 
