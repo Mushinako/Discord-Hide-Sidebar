@@ -1,2 +1,4 @@
 @echo off
-py -3 hideside.py %* > logs\output.log
+set scriptpath=%~dp0hideside.py
+set logpath=%~dp0logs\output.log
+py -3 %scriptpath% %* > %logpath%

@@ -197,14 +197,18 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
         os.path.expandvars(r"%LocalAppData%"),
         r"DiscordPTB\*\DiscordPTB.exe"
     )
-    STABLE_BOOT_BAT_PATH = os.path.join(
+    BOOT_BAT_DIR = os.path.join(
         os.path.dirname(__file__),
         os.path.pardir,
+        "scripts",
+        "windows"
+    )
+    STABLE_BOOT_BAT_PATH = os.path.join(
+        BOOT_BAT_DIR,
         "autostartreg.bat"
     )
     PTB_BOOT_BAT_PATH = os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir,
+        BOOT_BAT_DIR,
         "autostartregPTB.bat"
     )
 

@@ -4,7 +4,11 @@ import logging
 
 from hide_sidebars.main import main
 
-LOG_FILE = os.path.join("logs", "dhs.log")
+LOG_FILE = os.path.join(
+    os.path.dirname(__file__),
+    "logs",
+    "dhs.log"
+)
 # Change this to `logging.WARN` and redact all personal information before sharing logs!
 LOG_LEVEL = logging.DEBUG
 
