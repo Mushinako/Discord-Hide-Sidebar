@@ -43,8 +43,8 @@ class Runner:
     URL = Template("http://localhost:${port}/json")
 
     def __new__(cls, *args, **kwargs):
-        """Prevents `DiscordHideSidebar` from directly initialized"""
-        if cls is DiscordHideSidebar:
+        """Prevents `Runner` from being directly initialized"""
+        if cls is Runner:
             raise NotImplementedError(
                 "Initiation has to be specialized by operating system!"
             )
