@@ -11,9 +11,10 @@ from typing import List, Dict, Union, Optional
 import requests
 
 from hide_sidebars.action import ACTIONS
+from hide_sidebars.custom_types import RunnerArgs
 
 
-class DiscordHideSidebar:
+class Runner:
     """Base class for all operating systems
 
     Class variables:
@@ -43,17 +44,19 @@ class DiscordHideSidebar:
     URL = Template("http://localhost:${port}/json")
 
     def __new__(cls, *args, **kwargs):
-        """Prevents `DiscordHideSidebar` from directly initialized"""
-        if cls is DiscordHideSidebar:
+        """Prevents `Runner` from being directly initialized"""
+        if cls is Runner:
             raise NotImplementedError(
                 "Initiation has to be specialized by operating system!"
             )
         return super().__new__(cls)
 
-    def __init__(self, discord_path: Optional[str], port: Optional[int], boot: Union[bool, str, None], minimized: bool, ptb: bool) -> None:
-        self.discord_path = discord_path
+    def __init__(self, args: RunnerArgs) -> None:
+        self.discord_path = args.discord_path
         self.is_ptb: bool = False
         if self.discord_path is None:
+            if not self.DEFAULT_DISCORD_PATH_PATTERN and not self.DEFAULT_DISCORDPTB_PATH_PATTERN:
+                raise ValueError("No Discord executable path provided!")
             if not self.default_path(
                 self.DEFAULT_DISCORD_PATH_PATTERN,
                 False
@@ -71,17 +74,18 @@ class DiscordHideSidebar:
         else:
             self.is_ptb = "ptb" in os.path.basename(self.discord_path).lower()
         # PTB flag override
-        if ptb:
-            self.is_ptb = ptb
+        if args.ptb:
+            self.is_ptb = args.ptb
         # Other variables
-        self.port = port or self.DEFAULT_PORT
+        self.port = args.port or self.DEFAULT_PORT
         self.url = self.URL.substitute(port=self.port)
-        self.minimized = minimized
+        self.minimized = args.minimized
         self.boot: bool = False
         self.boot_path: Optional[str] = None
-        if boot is not None:
+        if args.boot is not None:
             self.boot = True
-            if isinstance(boot, str):
+            if isinstance(args.boot, str):
+                boot = args.boot
                 if boot[0] != "\"" or boot[-1] != "\"":
                     boot = f"\"{boot}\""
                 self.boot_path = boot
@@ -185,8 +189,14 @@ class DiscordHideSidebar:
         return response
 
 
-class WinDiscordHideSidebar(DiscordHideSidebar):
-    """Special variables/functions for Windows"""
+class WinRunner(Runner):
+    """Special variables/functions for Windows
+
+    Class variables:
+        BOOT_BAT_DIR         [str]: Directory containing boot patch batch files
+        STABLE_BOOT_BAT_PATH [str]: Path for stable Discord boot patch batch file
+        PTB_BOOT_BAT_PATH    [str]: Path for DiscordPTB boot patch batch file
+    """
 
     # Non-PTB version is priorized
     DEFAULT_DISCORD_PATH_PATTERN = os.path.join(
@@ -214,13 +224,15 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
-        DISCORD_EXECUTABLE_NAME = "Discord.exe"
+        DISCORD_EXECUTABLE_NAME = "DiscordPTB.exe" if self.is_ptb else "Discord.exe"
         processes = subprocess.Popen(
             ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        _, err = processes.communicate()
+        out, err = processes.communicate()
+        logging.debug(out)
+        logging.warn(err)
         if err and b"\"Discord.exe\" not found" not in err:
             raise OSError(err)
 
@@ -241,3 +253,43 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
         out, err = proc.communicate()
         logging.debug(out.strip())
         logging.warn(err.strip())
+
+
+class MacOsRunner(Runner):
+    """Special variables/functions for macOS"""
+
+    def kill_running(self) -> None:
+        """Kill all running Discord processes"""
+        DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
+        process = subprocess.Popen(
+            ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = process.communicate()
+        logging.debug(out)
+        logging.warn(err)
+
+    def patch_boot(self) -> None:
+        """Patch boot, not written yet"""
+        print("Patching boot is currently Windows only!")
+
+
+class LinuxRunner(Runner):
+    """Special variables/functions for Linux"""
+
+    def kill_running(self) -> None:
+        """Kill all running Discord processes"""
+        DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
+        process = subprocess.Popen(
+            ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = process.communicate()
+        logging.debug(out)
+        logging.warn(err)
+
+    def patch_boot(self) -> None:
+        """Patch boot, not written yet"""
+        print("Patching boot is currently Windows only!")
