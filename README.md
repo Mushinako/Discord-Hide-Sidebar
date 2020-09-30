@@ -54,7 +54,7 @@ python3 hideside.py -d "/usr/bin/discord"
 ### Advanced Usage
 
 ```text
-usage: hideside.py [-h] [-d DISCORD_PATH] [-p {0-65535}] [-m]
+usage: hideside.py [-h] [-d DISCORD_PATH] [-p {0-65535}] [-b [BOOT]] [-m] [-t]
 
 Hide sidebar on Discord!
 
@@ -64,8 +64,10 @@ optional arguments:
                         Path of Discord executable
   -p {0-65535}, --port {0-65535}
                         Port for the debugging session to run
+  -b [BOOT], --boot [BOOT]
+                        Use this to patch registry to override boot. Specify script path as necessary
   -m, --minimized       Use this to start Discord minimized
-```
+  -t, --ptb             Use this to indicate Discord is PTB```
 
 ## FAQ
 
@@ -84,7 +86,7 @@ Support is not guaranteed, but you're more than welcomed to try.
 You can also open an issue if the script does not work for PTB.
 
 If you have both PTB and non-PTB installed, the script will priorize non-PTB version.
-You can still manually call PTB version by passing it into `-d DISCORD_PATH`.
+You can still manually call PTB version by passing it into `-d DISCORD_PATH` and adding `-t`.
 
 ## License
 

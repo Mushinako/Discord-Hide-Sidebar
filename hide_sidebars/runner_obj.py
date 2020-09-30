@@ -6,7 +6,7 @@ import subprocess
 import logging
 from string import Template
 from glob import glob
-from typing import List, Dict, Optional
+from typing import List, Dict, Union, Optional
 
 import requests
 
@@ -17,21 +17,26 @@ class DiscordHideSidebar:
     """Base class for all operating systems
 
     Class variables:
-        DEFAULT_DISCORD_PATH_PATTERNS [List[str]]: Glob pattern of default path of Discord executable
-        DEFAULT_PORT                  [int]      : Default port for the debugging session to run
-        DEBUG_PARAMETER               [Template] : Parameter template to trigger Discord debugging mode
-        MINIMIZED_PARAMETR            [str]      : Parameter to ask Discord to start minimized
-        URL                           [Template] : URL template of the debugging session
+        DEFAULT_DISCORD_PATH_PATTERN    [str]     : Glob pattern of default path of Discord executable
+        DEFAULT_DISCORDPTB_PATH_PATTERN [str]     : Glob pattern of default path of DiscordPTB executable
+        DEFAULT_PORT                    [int]     : Default port for the debugging session to run
+        DEBUG_PARAMETER                 [Template]: Parameter template to trigger Discord debugging mode
+        MINIMIZED_PARAMETR              [str]     : Parameter to ask Discord to start minimized
+        URL                             [Template]: URL template of the debugging session
 
     Instance variables:
         discord_path [str]                       : Path of Discord executable
+        is_ptb       [bool]                      : Whether the Discord executable is PTB
         port         [int]                       : Port for the debugging session to run
         url          [str]                       : URL of the debugging session
         minimized    [bool]                      : Whether to start Discord minimized
+        boot         [bool]                      : Whether to patch registry to override boot
+        boot_path    [Optional[str]]             : Path of the script file, if not default
         process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
 
-    DEFAULT_DISCORD_PATH_PATTERNS = [""]
+    DEFAULT_DISCORD_PATH_PATTERN = ""
+    DEFAULT_DISCORDPTB_PATH_PATTERN = ""
     DEFAULT_PORT = 34726
     DEBUG_PARAMETER = Template("--remote-debugging-port=${port}")
     MINIMIZED_PARAMETER = "--start-minimized"
@@ -45,35 +50,63 @@ class DiscordHideSidebar:
             )
         return super().__new__(cls)
 
-    def __init__(self, discord_path: Optional[str], port: Optional[int], minimized: bool) -> None:
-        if not self.DEFAULT_DISCORD_PATH_PATTERNS[0]:
-            raise NotImplementedError(
-                f"This class {type(self).__name__} is not fully implemented!"
-            )
+    def __init__(self, discord_path: Optional[str], port: Optional[int], boot: Union[bool, str, None], minimized: bool, ptb: bool) -> None:
         self.discord_path = discord_path
+        self.is_ptb: bool = False
         if self.discord_path is None:
-            for pattern in self.DEFAULT_DISCORD_PATH_PATTERNS:
-                # The last match is assumed to be the latest version
-                paths = glob(pattern)
-                if not paths:
-                    logging.warn(
-                        f"No Discord executable found in {pattern}"
-                    )
-                    continue
-                self.discord_path = paths[-1]
-                break
-            else:
+            if not self.default_path(
+                self.DEFAULT_DISCORD_PATH_PATTERN,
+                False
+            ) and not self.default_path(
+                self.DEFAULT_DISCORDPTB_PATH_PATTERN,
+                True
+            ):
                 raise FileNotFoundError(
-                    f"No Discord executable found in default paths {self.DEFAULT_DISCORD_PATH_PATTERNS}"
+                    f"No Discord executable found in default paths {[self.DEFAULT_DISCORD_PATH_PATTERN, self.DEFAULT_DISCORDPTB_PATH_PATTERN]}"
                 )
         # Test Discord path validity
         elif not os.path.isfile(self.discord_path):
             raise FileNotFoundError(f"{self.discord_path} is not a file!")
+        # Check if provided path is potentially PTB
+        else:
+            self.is_ptb = "ptb" in os.path.basename(self.discord_path).lower()
+        # PTB flag override
+        if ptb:
+            self.is_ptb = ptb
         # Other variables
         self.port = port or self.DEFAULT_PORT
         self.url = self.URL.substitute(port=self.port)
         self.minimized = minimized
-        self.process = None
+        self.boot: bool = False
+        self.boot_path: Optional[str] = None
+        if boot is not None:
+            self.boot = True
+            if isinstance(boot, str):
+                if boot[0] != "\"" or boot[-1] != "\"":
+                    boot = f"\"{boot}\""
+                self.boot_path = boot
+        self.process: Optional[subprocess.Popen[str]] = None
+
+    def default_path(self, pattern: str, ptb: bool) -> bool:
+        """Get the default path , set the vars, and return whether it exists
+
+        Args:
+            pattern [str] : glob pattern
+            ptb     [bool]: `is_ptb` value corresponding to this pattern
+
+        Returns:
+            [bool]: Whether a path is found
+        """
+        if not pattern:
+            logging.warn("Empty default path")
+            return False
+        paths = glob(pattern)
+        if not paths:
+            logging.warn(f"No Discord executable found in {pattern}")
+            return False
+        self.discord_path = paths[-1]
+        self.is_ptb = ptb
+        return True
 
     def run(self) -> None:
         """Injection go brrrr"""
@@ -82,7 +115,10 @@ class DiscordHideSidebar:
         while True:
             info = self.get_info()
             if info is None:
-                continue
+                if self.process.poll() is None:
+                    continue
+                else:
+                    break
             for window in info:
                 if ACTIONS.init.run(window):
                     break
@@ -90,6 +126,8 @@ class DiscordHideSidebar:
                 continue
             break
         self.process.wait()
+        if self.boot:
+            self.patch_boot()
 
     def kill_running(self) -> None:
         raise NotImplementedError(
@@ -123,6 +161,11 @@ class DiscordHideSidebar:
         response_json: List[Dict[str, str]] = response.json()
         return response_json
 
+    def patch_boot(self) -> None:
+        raise NotImplementedError(
+            f"This class {type(self).__name__} is not fully implemented!"
+        )
+
     @staticmethod
     def get_req(url: str) -> Optional[requests.Response]:
         """GET URL, with proper error handling
@@ -146,16 +189,28 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
     """Special variables/functions for Windows"""
 
     # Non-PTB version is priorized
-    DEFAULT_DISCORD_PATH_PATTERNS = [
-        os.path.join(
-            os.path.expandvars(r"%LocalAppData%"),
-            r"Discord\*\Discord.exe"
-        ),
-        os.path.join(
-            os.path.expandvars(r"%LocalAppData%"),
-            r"DiscordPTB\*\DiscordPTB.exe"
-        ),
-    ]
+    DEFAULT_DISCORD_PATH_PATTERN = os.path.join(
+        os.path.expandvars(r"%LocalAppData%"),
+        r"Discord\*\Discord.exe"
+    )
+    DEFAULT_DISCORDPTB_PATH_PATTERN = os.path.join(
+        os.path.expandvars(r"%LocalAppData%"),
+        r"DiscordPTB\*\DiscordPTB.exe"
+    )
+    BOOT_BAT_DIR = os.path.join(
+        os.path.dirname(__file__),
+        os.path.pardir,
+        "scripts",
+        "windows"
+    )
+    STABLE_BOOT_BAT_PATH = os.path.join(
+        BOOT_BAT_DIR,
+        "autostartreg.bat"
+    )
+    PTB_BOOT_BAT_PATH = os.path.join(
+        BOOT_BAT_DIR,
+        "autostartregPTB.bat"
+    )
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
@@ -168,3 +223,21 @@ class WinDiscordHideSidebar(DiscordHideSidebar):
         _, err = processes.communicate()
         if err and b"\"Discord.exe\" not found" not in err:
             raise OSError(err)
+
+    def patch_boot(self) -> None:
+        """Patch boot"""
+        args = [
+            self.PTB_BOOT_BAT_PATH
+            if self.is_ptb
+            else self.STABLE_BOOT_BAT_PATH
+        ]
+        if self.boot_path is not None:
+            args.append(self.boot_path)
+        proc = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = proc.communicate()
+        logging.debug(out.strip())
+        logging.warn(err.strip())
