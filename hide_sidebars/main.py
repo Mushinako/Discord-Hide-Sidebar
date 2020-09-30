@@ -2,31 +2,10 @@
 """Main module. Decides which functions to call"""
 
 import platform
-from argparse import ArgumentParser, Namespace
-from dataclasses import dataclass
-from typing import Union, Optional
+from argparse import ArgumentParser
 
-from hide_sidebars.runner_obj import WinRunner
-
-
-@dataclass
-class RunnerArgs(Namespace):
-    """Specific `Namespace` object for arguments of this program
-    Mainly used for type notation
-
-    Instance variables:
-        discord_path  [Optional[str]]: Path of Discord executable
-        port          [Optional[int]]: Port for the debugging session to run
-        boot [Union[bool, str, None]]: Whether to patch registry to override boot, and optionally the script path
-        minimized     [bool]         : Whether to start Discord minimized
-        ptb           [bool]         : Whether Discord is PTB
-    """
-
-    discord_path: Optional[str]
-    port: Optional[int]
-    boot: Union[bool, str, None]
-    minimized: bool
-    ptb: bool
+from hide_sidebars.runner_obj import WinRunner, MacOsRunner, LinuxRunner
+from hide_sidebars.custom_types import RunnerArgs
 
 
 def parse_arguments() -> RunnerArgs:
@@ -89,17 +68,17 @@ def main() -> None:
     operating_system = platform.system()
 
     if operating_system == "Windows":
-        runner = WinRunner(
-            args.discord_path,
-            args.port,
-            args.boot,
-            args.minimized,
-            args.ptb
-        )
+        runner = WinRunner(args)
         runner.run()
         return
     if operating_system == "Darwin":
-        runner
+        runner = MacOsRunner(args)
+        runner.run()
+        return
+    if operating_system == "Linux":
+        runner = LinuxRunner(args)
+        runner.run()
+        return
     raise NotImplementedError(
         f"Your operating system \"{platform.platform()}\" is not yet supported"
     )
