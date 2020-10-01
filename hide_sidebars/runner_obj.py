@@ -6,7 +6,7 @@ import subprocess
 import logging
 from pathlib import Path
 from string import Template
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Optional
 
 import requests
 
@@ -160,13 +160,14 @@ class Runner:
         Returns:
             [Optional[pathlib.Path]]: A path if it is found; `None` otherwise
         """
+        log = "[Runner.default_path]"
         if pattern is None:
-            logging.warn("Empty pattern")
+            logging.warn(f"{log} Empty pattern")
             return
         paths = list(root.glob(pattern))
         if not paths:
             logging.warn(
-                f"No Discord executable found in {root} with pattern {pattern}"
+                f"{log} No Discord executable found in {root} with pattern {pattern}"
             )
             return
         return paths[-1]
@@ -181,11 +182,12 @@ class Runner:
         Returns:
             [Optional[requests.Response]]: Response object, if any
         """
+        log = "[Runner.get_req]"
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
             # Possibly the program has exited
-            logging.warn(f"json from {url} connection error")
+            logging.warn(f"{log} json from {url} connection error")
             return
         return response
 
@@ -208,6 +210,7 @@ class WinRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
+        log = "[WinRunner.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB.exe" if self.is_ptb else "Discord.exe"
         processes = subprocess.Popen(
             ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
@@ -215,11 +218,12 @@ class WinRunner(Runner):
             stderr=subprocess.PIPE,
         )
         out, err = processes.communicate()
-        logging.debug(out)
-        logging.warn(err)
+        logging.debug(f"{log} {out.strip()}")
+        logging.warn(f"{log} {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot"""
+        log = "[WinRunner.patch_boot]"
         args = [
             str(self.PTB_BOOT_BAT_PATH)
             if self.is_ptb
@@ -236,8 +240,8 @@ class WinRunner(Runner):
             stderr=subprocess.PIPE
         )
         out, err = proc.communicate()
-        logging.debug(out.strip())
-        logging.warn(err.strip())
+        logging.debug(f"{log} {out.strip()}")
+        logging.warn(f"{log} {err.strip()}")
 
 
 class MacOsRunner(Runner):
@@ -245,6 +249,7 @@ class MacOsRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
+        log = "[MacOsRunner.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
         process = subprocess.Popen(
             ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
@@ -252,8 +257,8 @@ class MacOsRunner(Runner):
             stderr=subprocess.PIPE
         )
         out, err = process.communicate()
-        logging.debug(out)
-        logging.warn(err)
+        logging.debug(f"{log} {out.strip()}")
+        logging.warn(f"{log} {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot, not written yet"""
@@ -265,6 +270,7 @@ class LinuxRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
+        log = "[LinuxRunner.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
         process = subprocess.Popen(
             ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
@@ -272,8 +278,8 @@ class LinuxRunner(Runner):
             stderr=subprocess.PIPE
         )
         out, err = process.communicate()
-        logging.debug(out)
-        logging.warn(err)
+        logging.debug(f"{log} {out.strip()}")
+        logging.warn(f"{log} {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot, not written yet"""
