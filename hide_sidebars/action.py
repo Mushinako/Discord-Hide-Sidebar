@@ -67,9 +67,10 @@ class Action:
         Returns:
             [int]: Error codes: 0 is successful, 1 is error, -1 is unknown
         """
-        logging.debug(f'\"{window["title"]}\"')
+        log = "[Action.ws_req_and_res]"
+        logging.debug(f'{log} \"{window["title"]}\"')
         if window["title"].lower() in self.TITLE_BLACKLIST:
-            logging.debug("1 Blacklist")
+            logging.debug(f"{log} 1 Blacklist")
             return 1
         socket_url = window[self.SOCKET_URL_KEY]
         ws = self.ws_req(socket_url)
@@ -90,24 +91,31 @@ class Action:
         Returns:
             [int]: Error codes: 0 is successful, 1 is error, -1 is unknown
         """
-        title = f"\"{window['title']}\""
+        log = "[Action.parse_ws_response]"
+        title = f"\'{window['title']}\'"
         if response is None:
-            logging.warn(f"{title} {self.name} response empty")
+            logging.warn(f"{log} \"{title} {self.name}\" response empty")
             return -1
         response_dict: Dict = json.loads(response)
         if "result" not in response_dict:
-            logging.warn(f"{title} {self.name} response has no 'result'")
+            logging.warn(
+                f"{log} \"{title} {self.name}\" response has no 'result'"
+            )
             return -1
         result = response_dict["result"]
         if "exceptionDetails" in result:
             exception_details = result["exceptionDetails"]
             if "exception" not in exception_details:
-                logging.warn(f"{title} {self.name} failed but no details")
+                logging.warn(
+                    f"{log} \"{title} {self.name}\" failed but no details"
+                )
             else:
                 exception = exception_details["exception"]
-                logging.warn(f"{title} {self.name} failed by {exception}")
+                logging.warn(
+                    f"{log} \"{title} {self.name}\" failed by {exception}"
+                )
             return 1
-        logging.info(f"{title} {self.name} successful")
+        logging.info(f"{log} \"{title} {self.name}\" successful")
         return 0
 
     @staticmethod
@@ -142,19 +150,20 @@ class Action:
         Returns:
             [Optional[websocket.WebSocket]]: WebSocket connection, if any
         """
+        log = "[Action.ws_req]"
         try:
             ws = websocket.create_connection(url)
         except ConnectionRefusedError:
             # Possibly the program has exited
-            logging.warn(f"websocket to {url} refused")
+            logging.warn(f"{log} websocket to {url} refused")
             return
         except ConnectionResetError:
             # Possibly the program has crashed
-            logging.warn(f"websocket to {url} reset")
+            logging.warn(f"{log} websocket to {url} reset")
             return
         except websocket.WebSocketBadStatusException:
             # Possibly the window is changed
-            logging.warn(f"websocket to {url} bad status")
+            logging.warn(f"{log} websocket to {url} bad status")
             return
         return ws
 
