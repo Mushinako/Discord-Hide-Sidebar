@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """A module that stores the actions"""
 
-import os.path
 import json
 import logging
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, Optional
 
 import websocket
 
-JS_DIR_PATH = os.path.join(
-    os.path.dirname(__file__),
-    os.path.pardir,
-    "js"
-)
+JS_DIR_PATH = Path(__file__).resolve().parent.parent / "js"
 JS_NAMES = {
     "init": "init.min.js",
 }
@@ -26,9 +22,9 @@ class Action:
         SOCKET_URL_KEY [str]: Key name for socket URL
 
     Properties:
-        name    [str]: Name of action
-        js_path [str]: Path of JavaScript file
-        payload [str]: JSON payload
+        name    [str]         : Name of action
+        js_path [pathlib.Path]: Path of JavaScript file
+        payload [str]         : JSON payload
     """
 
     SOCKET_URL_KEY = "webSocketDebuggerUrl"
@@ -38,7 +34,7 @@ class Action:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.js_path = os.path.join(JS_DIR_PATH, JS_NAMES[name])
+        self.js_path = JS_DIR_PATH / JS_NAMES[name]
         self.payload = self.get_js_payload()
 
     def get_js_payload(self) -> str:
@@ -48,10 +44,10 @@ class Action:
             [str]: JSON payload for the JavaScript
         """
         # Test JavaScript path validity
-        if not os.path.isfile(self.js_path):
+        if not self.js_path.is_file():
             raise FileNotFoundError(f"{self.js_path} is not a file!")
         # Read JavaScript
-        with open(self.js_path, "r") as file_obj:
+        with self.js_path.open("r") as file_obj:
             js = file_obj.read().strip()
         # Assemble data
         payload = self.gen_payload(js)

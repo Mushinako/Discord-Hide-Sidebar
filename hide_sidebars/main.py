@@ -2,6 +2,7 @@
 """Main module. Decides which functions to call"""
 
 import platform
+from pathlib import Path
 from argparse import ArgumentParser
 
 from hide_sidebars.runner_obj import WinRunner, MacOsRunner, LinuxRunner
@@ -19,6 +20,7 @@ def parse_arguments() -> RunnerArgs:
         "-d", "--discord-path",
         nargs=1,
         default=None,
+        type=Path,
         help="Path of Discord executable",
         dest="discord_path"
     )

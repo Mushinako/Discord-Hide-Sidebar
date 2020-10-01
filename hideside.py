@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-import os.path
 import logging
+from pathlib import Path
 
 from hide_sidebars.main import main
 
-LOG_FILE = os.path.join(
-    os.path.dirname(__file__),
-    "logs",
-    "dhs.log"
-)
+LOG_FILE = Path(__file__).resolve().parent / "logs" / "dhs.log"
 # Change this to `logging.WARN` and redact all personal information before sharing logs!
 LOG_LEVEL = logging.DEBUG
 
