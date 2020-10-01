@@ -4,8 +4,8 @@
 import os.path
 import subprocess
 import logging
+from pathlib import Path
 from string import Template
-from glob import glob
 from typing import List, Dict, Union, Optional
 
 import requests
@@ -18,26 +18,28 @@ class Runner:
     """Base class for all operating systems
 
     Class variables:
-        DEFAULT_DISCORD_PATH_PATTERN    [str]     : Glob pattern of default path of Discord executable
-        DEFAULT_DISCORDPTB_PATH_PATTERN [str]     : Glob pattern of default path of DiscordPTB executable
-        DEFAULT_PORT                    [int]     : Default port for the debugging session to run
-        DEBUG_PARAMETER                 [Template]: Parameter template to trigger Discord debugging mode
-        MINIMIZED_PARAMETR              [str]     : Parameter to ask Discord to start minimized
-        URL                             [Template]: URL template of the debugging session
+        DEFAULT_PATH_ROOT           [Optional[pathlib.Path]]: Root of default path of Discord(PTB) executables
+        DEFAULT_STABLE_PATH_PATTERN [Optional[str]]         : Glob pattern of default path of Discord executable
+        DEFAULT_PTB_PATH_PATTERN    [Optional[str]]         : Glob pattern of default path of DiscordPTB executable
+        DEFAULT_PORT                [int]                   : Default port for the debugging session to run
+        DEBUG_PARAMETER             [Template]              : Parameter template to trigger Discord debugging mode
+        MINIMIZED_PARAMETR          [str]                   : Parameter to ask Discord to start minimized
+        URL                         [Template]              : URL template of the debugging session
 
     Instance variables:
-        discord_path [str]                       : Path of Discord executable
+        discord_path [pathlib.Path]              : Path of Discord executable
         is_ptb       [bool]                      : Whether the Discord executable is PTB
         port         [int]                       : Port for the debugging session to run
         url          [str]                       : URL of the debugging session
         minimized    [bool]                      : Whether to start Discord minimized
         boot         [bool]                      : Whether to patch registry to override boot
-        boot_path    [Optional[str]]             : Path of the script file, if not default
+        boot_path    [Optional[pathlib.Path]]    : Path of the boot script file, if not default
         process [Optional[subprocess.Popen[str]]]: The started Discord process
     """
 
-    DEFAULT_DISCORD_PATH_PATTERN = ""
-    DEFAULT_DISCORDPTB_PATH_PATTERN = ""
+    DEFAULT_PATH_ROOT: Optional[Path] = None
+    DEFAULT_STABLE_PATH_PATTERN: Optional[str] = None
+    DEFAULT_PTB_PATH_PATTERN: Optional[str] = None
     DEFAULT_PORT = 34726
     DEBUG_PARAMETER = Template("--remote-debugging-port=${port}")
     MINIMIZED_PARAMETER = "--start-minimized"
@@ -52,27 +54,28 @@ class Runner:
         return super().__new__(cls)
 
     def __init__(self, args: RunnerArgs) -> None:
-        self.discord_path = args.discord_path
         self.is_ptb: bool = False
-        if self.discord_path is None:
-            if not self.DEFAULT_DISCORD_PATH_PATTERN and not self.DEFAULT_DISCORDPTB_PATH_PATTERN:
+        if args.discord_path is None:
+            root = self.DEFAULT_PATH_ROOT
+            stable_glob = self.DEFAULT_STABLE_PATH_PATTERN
+            ptb_glob = self.DEFAULT_PTB_PATH_PATTERN
+            if root is None or all(g is None for g in [stable_glob, ptb_glob]):
                 raise ValueError("No Discord executable path provided!")
-            if not self.default_path(
-                self.DEFAULT_DISCORD_PATH_PATTERN,
-                False
-            ) and not self.default_path(
-                self.DEFAULT_DISCORDPTB_PATH_PATTERN,
-                True
-            ):
+            if (path := self.default_path(root, stable_glob)) is not None:
+                self.discord_path = path
+            elif (path := self.default_path(root, ptb_glob)) is not None:
+                self.discord_path = path
+            else:
                 raise FileNotFoundError(
-                    f"No Discord executable found in default paths {[self.DEFAULT_DISCORD_PATH_PATTERN, self.DEFAULT_DISCORDPTB_PATH_PATTERN]}"
+                    f"No Discord executable found in root {root} with patterns {[stable_glob, ptb_glob]}"
                 )
         # Test Discord path validity
-        elif not os.path.isfile(self.discord_path):
-            raise FileNotFoundError(f"{self.discord_path} is not a file!")
+        elif not args.discord_path.is_file():
+            raise FileNotFoundError(f"{args.discord_path} is not a file!")
         # Check if provided path is potentially PTB
         else:
-            self.is_ptb = "ptb" in os.path.basename(self.discord_path).lower()
+            self.discord_path = args.discord_path
+            self.is_ptb = "ptb" in self.discord_path.name.lower()
         # PTB flag override
         if args.ptb:
             self.is_ptb = args.ptb
@@ -81,36 +84,12 @@ class Runner:
         self.url = self.URL.substitute(port=self.port)
         self.minimized = args.minimized
         self.boot: bool = False
-        self.boot_path: Optional[str] = None
+        self.boot_path: Optional[Path] = None
         if args.boot is not None:
             self.boot = True
             if isinstance(args.boot, str):
-                boot = args.boot
-                if boot[0] != "\"" or boot[-1] != "\"":
-                    boot = f"\"{boot}\""
-                self.boot_path = boot
+                self.boot_path = Path(args.boot)
         self.process: Optional[subprocess.Popen[str]] = None
-
-    def default_path(self, pattern: str, ptb: bool) -> bool:
-        """Get the default path , set the vars, and return whether it exists
-
-        Args:
-            pattern [str] : glob pattern
-            ptb     [bool]: `is_ptb` value corresponding to this pattern
-
-        Returns:
-            [bool]: Whether a path is found
-        """
-        if not pattern:
-            logging.warn("Empty default path")
-            return False
-        paths = glob(pattern)
-        if not paths:
-            logging.warn(f"No Discord executable found in {pattern}")
-            return False
-        self.discord_path = paths[-1]
-        self.is_ptb = ptb
-        return True
 
     def run(self) -> None:
         """Injection go brrrr"""
@@ -171,6 +150,28 @@ class Runner:
         )
 
     @staticmethod
+    def default_path(root: Path, pattern: Optional[str]) -> Optional[Path]:
+        """Get the default path , set the vars, and return whether it exists
+
+        Args:
+            root    [pathlib.Path] : Root path to run the pattern in
+            pattern [Optional[str]]: glob pattern
+
+        Returns:
+            [Optional[pathlib.Path]]: A path if it is found; `None` otherwise
+        """
+        if pattern is None:
+            logging.warn("Empty pattern")
+            return
+        paths = list(root.glob(pattern))
+        if not paths:
+            logging.warn(
+                f"No Discord executable found in {root} with pattern {pattern}"
+            )
+            return
+        return paths[-1]
+
+    @staticmethod
     def get_req(url: str) -> Optional[requests.Response]:
         """GET URL, with proper error handling
 
@@ -193,34 +194,17 @@ class WinRunner(Runner):
     """Special variables/functions for Windows
 
     Class variables:
-        BOOT_BAT_DIR         [str]: Directory containing boot patch batch files
-        STABLE_BOOT_BAT_PATH [str]: Path for stable Discord boot patch batch file
-        PTB_BOOT_BAT_PATH    [str]: Path for DiscordPTB boot patch batch file
+        BOOT_BAT_DIR         [pathlib.Path]: Directory containing boot patch batch files
+        STABLE_BOOT_BAT_PATH [pathlib.Path]: Path for stable Discord boot patch batch file
+        PTB_BOOT_BAT_PATH    [pathlib.Path]: Path for DiscordPTB boot patch batch file
     """
 
-    # Non-PTB version is priorized
-    DEFAULT_DISCORD_PATH_PATTERN = os.path.join(
-        os.path.expandvars(r"%LocalAppData%"),
-        r"Discord\*\Discord.exe"
-    )
-    DEFAULT_DISCORDPTB_PATH_PATTERN = os.path.join(
-        os.path.expandvars(r"%LocalAppData%"),
-        r"DiscordPTB\*\DiscordPTB.exe"
-    )
-    BOOT_BAT_DIR = os.path.join(
-        os.path.dirname(__file__),
-        os.path.pardir,
-        "scripts",
-        "windows"
-    )
-    STABLE_BOOT_BAT_PATH = os.path.join(
-        BOOT_BAT_DIR,
-        "autostartreg.bat"
-    )
-    PTB_BOOT_BAT_PATH = os.path.join(
-        BOOT_BAT_DIR,
-        "autostartregPTB.bat"
-    )
+    DEFAULT_PATH_ROOT = Path(os.path.expandvars(r"%LocalAppData%"))
+    DEFAULT_STABLE_PATH_PATTERN = r"Discord\*\Discord.exe"
+    DEFAULT_PTB_PATH_PATTERN = r"DiscordPTB\*\DiscordPTB.exe"
+    BOOT_BAT_DIR = Path(__file__).parent.parent / "scripts" / "windows"
+    STABLE_BOOT_BAT_PATH = BOOT_BAT_DIR / "autostartreg.bat"
+    PTB_BOOT_BAT_PATH = BOOT_BAT_DIR / "autostartregPTB.bat"
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
@@ -233,18 +217,19 @@ class WinRunner(Runner):
         out, err = processes.communicate()
         logging.debug(out)
         logging.warn(err)
-        if err and f"\"{DISCORD_EXECUTABLE_NAME}\" not found".encode("utf-8") not in err:
-            raise OSError(err)
 
     def patch_boot(self) -> None:
         """Patch boot"""
         args = [
-            self.PTB_BOOT_BAT_PATH
+            str(self.PTB_BOOT_BAT_PATH)
             if self.is_ptb
-            else self.STABLE_BOOT_BAT_PATH
+            else str(self.STABLE_BOOT_BAT_PATH)
         ]
         if self.boot_path is not None:
-            args.append(self.boot_path)
+            boot = str(self.boot_path)
+            if any(char != "\"" for char in [boot[0], boot[-1]]):
+                boot = f"\"{boot}\""
+            args.append(boot)
         proc = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
