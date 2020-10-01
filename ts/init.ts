@@ -89,9 +89,17 @@ var showSide = (): void => {
  * @param {KeyboardEvent} ev The `keydown` event
  */
 var keyEl = (ev: KeyboardEvent): void => {
-    if (ev.ctrlKey && ev.key === "l") {
-        if (btnDiv.classList.contains(cn)) showSide();
-        else hideSide();
+    if (ev.ctrlKey) {
+        if (ev.key === "L") {
+            dhsb();
+            return;
+        }
+        if (ev.key === "l") {
+            if (btnDiv.classList.contains(cn)) showSide();
+            else hideSide();
+            return;
+        }
+        return;
     }
 };
 

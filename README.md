@@ -32,6 +32,8 @@ Alternatively, use <kbd>Ctrl</kbd> + <kbd>l</kbd>
 
 ![Example](asset/eg.gif)
 
+If there's no such toggle, try <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>l</kbd> to get the toggle to show
+
 ### Basic Usage
 
 #### Windows

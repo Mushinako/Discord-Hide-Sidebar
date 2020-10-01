@@ -62,11 +62,19 @@ var showSide = () => {
     setCache("0");
 };
 var keyEl = (ev) => {
-    if (ev.ctrlKey && ev.key === "l") {
-        if (btnDiv.classList.contains(cn))
-            showSide();
-        else
-            hideSide();
+    if (ev.ctrlKey) {
+        if (ev.key === "L") {
+            dhsb();
+            return;
+        }
+        if (ev.key === "l") {
+            if (btnDiv.classList.contains(cn))
+                showSide();
+            else
+                hideSide();
+            return;
+        }
+        return;
     }
 };
 var getServerUrl = () => {
