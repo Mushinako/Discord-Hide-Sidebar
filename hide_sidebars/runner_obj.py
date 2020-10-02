@@ -13,6 +13,8 @@ import requests
 from hide_sidebars.action import ACTIONS
 from hide_sidebars.custom_types import RunnerArgs
 
+logger = logging.getLogger(__name__)
+
 
 class Runner:
     """Base class for all operating systems
@@ -47,37 +49,59 @@ class Runner:
 
     def __new__(cls, *args, **kwargs):
         """Prevents `Runner` from being directly initialized"""
+        log = f"[{cls.__name__}.__new__]"
         if cls is Runner:
+            logger.critical(
+                f"{log} Initiation has to be specialized by operating system",
+                stack_info=True
+            )
             raise NotImplementedError(
                 "Initiation has to be specialized by operating system!"
             )
         return super().__new__(cls)
 
     def __init__(self, args: RunnerArgs) -> None:
+        log = f"[{type(self).__name__}.__init__]"
         self.is_ptb: bool = False
+        # No path provided. Check defaults
         if args.discord_path is None:
+            logger.info(f"{log} No \"discord_path\" provided")
             root = self.DEFAULT_PATH_ROOT
             stable_glob = self.DEFAULT_STABLE_PATH_PATTERN
             ptb_glob = self.DEFAULT_PTB_PATH_PATTERN
+            logger.debug(f"{log} Default path root: \"{root}\"")
+            logger.debug(f"{log} Default glob stable: \"{stable_glob}\"")
+            logger.debug(f"{log} Default glob PTB: \"{ptb_glob}\"")
+            # No defaults
             if root is None or all(g is None for g in [stable_glob, ptb_glob]):
+                logger.critical(f"{log} No Discord executable path provided")
                 raise ValueError("No Discord executable path provided!")
+            # Check default stable
             if (path := self.default_path(root, stable_glob)) is not None:
                 self.discord_path = path
+            # Check default PTB
             elif (path := self.default_path(root, ptb_glob)) is not None:
                 self.discord_path = path
+            # No executable found
             else:
-                raise FileNotFoundError(
-                    f"No Discord executable found in root {root} with patterns {[stable_glob, ptb_glob]}"
+                logger.critical(
+                    f"{log} No Discord executable found in default paths"
                 )
-        # Test Discord path validity
+                raise FileNotFoundError(
+                    f"No Discord executable found in root \"{root}\" with patterns {[stable_glob, ptb_glob]}"
+                )
+        # Test provided path validity
         elif not args.discord_path.is_file():
-            raise FileNotFoundError(f"{args.discord_path} is not a file!")
+            logger.critical(f"{log} Provided `discord_path` is not a file")
+            raise FileNotFoundError(f"\"{args.discord_path}\" is not a file!")
         # Check if provided path is potentially PTB
         else:
+            logger.info(f"{log} Provided `discord_path` used")
             self.discord_path = args.discord_path
             self.is_ptb = "ptb" in self.discord_path.name.lower()
         # PTB flag override
         if args.ptb:
+            logger.info(f"{log} PTB flag overridden")
             self.is_ptb = args.ptb
         # Other variables
         self.port = args.port or self.DEFAULT_PORT
@@ -90,20 +114,51 @@ class Runner:
             if isinstance(args.boot, str):
                 self.boot_path = Path(args.boot)
         self.process: Optional[subprocess.Popen[str]] = None
+        logger.debug(f"{log} Initialized: {self.__dict__}")
+
+    def default_path(self, root: Path, pattern: Optional[str]) -> Optional[Path]:
+        """Get the default path , set the vars, and return whether it exists
+
+        Args:
+            root    [pathlib.Path] : Root path to run the pattern in
+            pattern [Optional[str]]: glob pattern
+
+        Returns:
+            [Optional[pathlib.Path]]: A path if it is found; `None` otherwise
+        """
+        log = f"[{type(self).__name__}.default_path]"
+        if pattern is None:
+            logger.warn(f"{log} Empty pattern")
+            return
+        paths = list(root.glob(pattern))
+        if not paths:
+            logger.warn(
+                f"{log} No Discord executable found in \"{root}\" with pattern \"{pattern}\""
+            )
+            return
+        return paths[-1]
 
     def run(self) -> None:
         """Injection go brrrr"""
+        log = f"[{type(self).__name__}.run]"
         self.kill_running()
+        logger.debug(f"{log} Running instances killed")
         self.start_program()
+        logger.debug(
+            f"{log} Discord started process {self.process.pid}"
+        )
         while True:
             info = self.get_info()
             if info is None:
                 if self.process.poll() is None:
+                    # No info got; retry
                     continue
                 else:
+                    # Process terminated; exit loop
                     break
             for window in info:
                 if ACTIONS.init.run(window):
+                    # Injection successful
                     break
             else:
                 continue
@@ -113,18 +168,22 @@ class Runner:
             self.patch_boot()
 
     def kill_running(self) -> None:
+        log = f"[{type(self).__name__}.kill_running]"
+        logger.critical(f"{log} Unimplemented `kill_running`")
         raise NotImplementedError(
-            f"This class {type(self).__name__} is not fully implemented!"
+            f"Class `{type(self).__name__}` does not have `kill_running` method!"
         )
 
     def start_program(self) -> None:
         """Start Discord program"""
+        log = f"[{type(self).__name__}.start_program]"
         command: List[str] = [
             self.discord_path,
             self.DEBUG_PARAMETER.substitute(port=self.port)
         ]
         if self.minimized:
             command.append(self.MINIMIZED_PARAMETER)
+        logger.debug(f"{log} Command: `{command}`")
         self.process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -138,42 +197,15 @@ class Runner:
         Returns:
             [Optional[List[Dict[str, str]]]]: The response JSON object, if any
         """
+        log = f"[{type(self).__name__}.get_info]"
         response = self.get_req(self.url)
         if response is None:
+            logger.warn(f"{log} No response got from \"{self.url}\"")
             return
-        response_json: List[Dict[str, str]] = response.json()
-        return response_json
+        response_obj: List[Dict[str, str]] = response.json()
+        return response_obj
 
-    def patch_boot(self) -> None:
-        raise NotImplementedError(
-            f"This class {type(self).__name__} is not fully implemented!"
-        )
-
-    @staticmethod
-    def default_path(root: Path, pattern: Optional[str]) -> Optional[Path]:
-        """Get the default path , set the vars, and return whether it exists
-
-        Args:
-            root    [pathlib.Path] : Root path to run the pattern in
-            pattern [Optional[str]]: glob pattern
-
-        Returns:
-            [Optional[pathlib.Path]]: A path if it is found; `None` otherwise
-        """
-        log = "[Runner.default_path]"
-        if pattern is None:
-            logging.warn(f"{log} Empty pattern")
-            return
-        paths = list(root.glob(pattern))
-        if not paths:
-            logging.warn(
-                f"{log} No Discord executable found in {root} with pattern {pattern}"
-            )
-            return
-        return paths[-1]
-
-    @staticmethod
-    def get_req(url: str) -> Optional[requests.Response]:
+    def get_req(self, url: str) -> Optional[requests.Response]:
         """GET URL, with proper error handling
 
         Args:
@@ -182,14 +214,22 @@ class Runner:
         Returns:
             [Optional[requests.Response]]: Response object, if any
         """
-        log = "[Runner.get_req]"
+        log = f"[{type(self).__name__}.get_req]"
         try:
             response = requests.get(url)
         except requests.exceptions.ConnectionError:
             # Possibly the program has exited
-            logging.warn(f"{log} json from {url} connection error")
+            logger.warn(f"{log} JSON from \"{url}\" connection error")
             return
+        logger.debug(f"{log} Got response from \"{url}\": {response}")
         return response
+
+    def patch_boot(self) -> None:
+        log = f"[{type(self).__name__}.patch_boot]"
+        logger.critical(f"{log} Unimplemented `patch_boot`")
+        raise NotImplementedError(
+            f"Class `{type(self).__name__}` does not have `patch_boot` method!"
+        )
 
 
 class WinRunner(Runner):
@@ -210,21 +250,24 @@ class WinRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
-        log = "[WinRunner.kill_running]"
+        log = f"[{type(self).__name__}.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB.exe" if self.is_ptb else "Discord.exe"
-        processes = subprocess.Popen(
-            ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"],
+        logger.debug(f"{log} Process name: \"{DISCORD_EXECUTABLE_NAME}\"")
+        command = ["taskkill", "/F", "/IM", DISCORD_EXECUTABLE_NAME, "/T"]
+        logger.debug(f"{log} Command: `{command}`")
+        process = subprocess.Popen(
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        out, err = processes.communicate()
-        logging.debug(f"{log} {out.strip()}")
-        logging.warn(f"{log} {err.strip()}")
+        out, err = process.communicate()
+        logger.debug(f"{log} Process STDOUT: {out.strip()}")
+        logger.warn(f"{log} Process STDERR: {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot"""
-        log = "[WinRunner.patch_boot]"
-        args = [
+        log = f"[{type(self).__name__}.patch_boot]"
+        command = [
             str(self.PTB_BOOT_BAT_PATH)
             if self.is_ptb
             else str(self.STABLE_BOOT_BAT_PATH)
@@ -233,15 +276,16 @@ class WinRunner(Runner):
             boot = str(self.boot_path)
             if any(char != "\"" for char in [boot[0], boot[-1]]):
                 boot = f"\"{boot}\""
-            args.append(boot)
-        proc = subprocess.Popen(
-            args,
+            command.append(boot)
+        logger.debug(f"{log} Command: `{command}`")
+        process = subprocess.Popen(
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        out, err = proc.communicate()
-        logging.debug(f"{log} {out.strip()}")
-        logging.warn(f"{log} {err.strip()}")
+        out, err = process.communicate()
+        logger.debug(f"{log} Process STDOUT: {out.strip()}")
+        logger.warn(f"{log} Process STDERR: {err.strip()}")
 
 
 class MacOsRunner(Runner):
@@ -249,20 +293,25 @@ class MacOsRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
-        log = "[MacOsRunner.kill_running]"
+        log = f"[{type(self).__name__}.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
+        logger.debug(f"{log} Process name: \"{DISCORD_EXECUTABLE_NAME}\"")
+        command = ["pkill", "-a", DISCORD_EXECUTABLE_NAME]
+        logger.debug(f"{log} Command: `{command}`")
         process = subprocess.Popen(
-            ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
         out, err = process.communicate()
-        logging.debug(f"{log} {out.strip()}")
-        logging.warn(f"{log} {err.strip()}")
+        logger.debug(f"{log} {out.strip()}")
+        logger.warn(f"{log} {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot, not written yet"""
-        print("Patching boot is currently Windows only!")
+        log = f"[{type(self).__name__}.patch_boot]"
+        logger.warn(f"{log} Patching boot is currently unavailable on macOS")
+        print("Patching boot is currently unavailable on macOS")
 
 
 class LinuxRunner(Runner):
@@ -270,17 +319,22 @@ class LinuxRunner(Runner):
 
     def kill_running(self) -> None:
         """Kill all running Discord processes"""
-        log = "[LinuxRunner.kill_running]"
+        log = f"[{type(self).__name__}.kill_running]"
         DISCORD_EXECUTABLE_NAME = "DiscordPTB" if self.is_ptb else "Discord"
+        logger.debug(f"{log} Process name: \"{DISCORD_EXECUTABLE_NAME}\"")
+        command = ["pkill", "-a", DISCORD_EXECUTABLE_NAME]
+        logger.debug(f"{log} Command: `{command}`")
         process = subprocess.Popen(
-            ["pkill", "-a", DISCORD_EXECUTABLE_NAME],
+            command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
         out, err = process.communicate()
-        logging.debug(f"{log} {out.strip()}")
-        logging.warn(f"{log} {err.strip()}")
+        logger.debug(f"{log} {out.strip()}")
+        logger.warn(f"{log} {err.strip()}")
 
     def patch_boot(self) -> None:
         """Patch boot, not written yet"""
-        print("Patching boot is currently Windows only!")
+        log = f"[{type(self).__name__}.patch_boot]"
+        logger.warn(f"{log} Patching boot is currently unavailable on Linux")
+        print("Patching boot is currently unavailable on Linux")
