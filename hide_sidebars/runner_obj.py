@@ -78,7 +78,7 @@ class Runner:
                 logger.critical(f"{log} No Discord executable path provided")
                 raise ValueError("No Discord executable path provided!")
             # Check default stable
-            if (path := self.default_path(root, stable_glob)) is not None:
+            if not args.ptb and (path := self.default_path(root, stable_glob)) is not None:
                 self.discord_path = path
             # Check default PTB
             elif (path := self.default_path(root, ptb_glob)) is not None:
@@ -90,7 +90,7 @@ class Runner:
                     f"{log} No Discord executable found in default paths"
                 )
                 raise FileNotFoundError(
-                    f"No Discord executable found in root \"{root}\" with patterns {[stable_glob, ptb_glob]}"
+                    f"No Discord executable found in root \"{root}\" with patterns {[stable_glob, ptb_glob]} and ptb flag {args.ptb}"
                 )
         # Test provided path validity
         elif not args.discord_path.is_file():
