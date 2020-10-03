@@ -341,6 +341,3 @@ class LinuxRunner(Runner):
         log = f"[{type(self).__name__}.patch_boot]"
         logger.warn(f"{log} Patching boot is currently unavailable on Linux")
         print("Patching boot is currently unavailable on Linux")
-
-
-pass
