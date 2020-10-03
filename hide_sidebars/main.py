@@ -77,14 +77,17 @@ def main() -> None:
 
     if operating_system == "Windows":
         runner = WinRunner(args)
+        del args
         runner.run()
         return
     if operating_system == "Darwin":
         runner = MacOsRunner(args)
+        del args
         runner.run()
         return
     if operating_system == "Linux":
         runner = LinuxRunner(args)
+        del args
         runner.run()
         return
     logger.critical(

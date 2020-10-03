@@ -126,17 +126,17 @@ class Action:
         log = f"[{type(self).__name__}.ws_req]"
         try:
             ws = websocket.create_connection(url)
-        except ConnectionRefusedError:
+        except ConnectionRefusedError as err:
             # Possibly the program has exited
-            logger.warn(f"{log} WebSocket to {url} refused")
+            logger.warn(f"{log} WebSocket to {url} refused {err}")
             return
-        except ConnectionResetError:
+        except ConnectionResetError as err:
             # Possibly the program has crashed
-            logger.warn(f"{log} WebSocket to {url} reset")
+            logger.warn(f"{log} WebSocket to {url} reset {err}")
             return
-        except websocket.WebSocketBadStatusException:
+        except websocket.WebSocketBadStatusException as err:
             # Possibly the window is changed
-            logger.warn(f"{log} WebSocket to {url} bad status")
+            logger.warn(f"{log} WebSocket to {url} bad status {err}")
             return
         logger.info(f"{log} WebSocket to {url} successful")
         return ws
@@ -196,10 +196,16 @@ class InitAction(Action):
         """
         log = f"[{type(self).__name__}.run]"
         err_code = self.ws_req_and_res(window)
-        logger.info(
-            f"{log} WebSocket request and response returned {err_code}"
-        )
-        return err_code == 0
+        if err_code == 0:
+            logger.info(
+                f"{log} WebSocket request and response returned {err_code}"
+            )
+            return True
+        else:
+            logger.warn(
+                f"{log} WebSocket request and response returned {err_code}"
+            )
+            return False
 
 
 @dataclass

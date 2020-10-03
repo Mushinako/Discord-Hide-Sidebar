@@ -28,12 +28,4 @@ logger.addHandler(fh)
 # logger.addHandler(ch)
 
 if __name__ == "__main__":
-
-    # logging.basicConfig(
-    #     filename=LOG_FILE,
-    #     filemode="w",
-    #     datefmt='%H:%M:%S',
-    #     level=LOG_LEVEL
-    # )
-
     main()

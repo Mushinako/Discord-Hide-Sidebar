@@ -6,6 +6,7 @@ import subprocess
 import logging
 from pathlib import Path
 from string import Template
+from time import sleep
 from typing import List, Dict, Optional
 
 import requests
@@ -81,6 +82,7 @@ class Runner:
                 self.discord_path = path
             # Check default PTB
             elif (path := self.default_path(root, ptb_glob)) is not None:
+                self.is_ptb = True
                 self.discord_path = path
             # No executable found
             else:
@@ -148,6 +150,7 @@ class Runner:
             f"{log} Discord started process {self.process.pid}"
         )
         while True:
+            sleep(0.5)
             info = self.get_info()
             if info is None:
                 if self.process.poll() is None:
@@ -178,7 +181,7 @@ class Runner:
         """Start Discord program"""
         log = f"[{type(self).__name__}.start_program]"
         command: List[str] = [
-            self.discord_path,
+            str(self.discord_path),
             self.DEBUG_PARAMETER.substitute(port=self.port)
         ]
         if self.minimized:
@@ -217,9 +220,9 @@ class Runner:
         log = f"[{type(self).__name__}.get_req]"
         try:
             response = requests.get(url)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as err:
             # Possibly the program has exited
-            logger.warn(f"{log} JSON from \"{url}\" connection error")
+            logger.warn(f"{log} JSON from \"{url}\" connection error {err}")
             return
         logger.debug(f"{log} Got response from \"{url}\": {response}")
         return response
@@ -338,3 +341,6 @@ class LinuxRunner(Runner):
         log = f"[{type(self).__name__}.patch_boot]"
         logger.warn(f"{log} Patching boot is currently unavailable on Linux")
         print("Patching boot is currently unavailable on Linux")
+
+
+pass
