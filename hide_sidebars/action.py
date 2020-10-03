@@ -110,7 +110,6 @@ class Action:
             return 1
         ws.send(self.payload)
         response: Optional[str] = ws.recv()
-        logger.debug(f"{log} Got response from {socket_url}: {response}")
         err_code = self.parse_ws_response(response, window)
         return err_code
 
@@ -128,17 +127,17 @@ class Action:
             ws = websocket.create_connection(url)
         except ConnectionRefusedError as err:
             # Possibly the program has exited
-            logger.warn(f"{log} WebSocket to {url} refused {err}")
+            logger.warn(f"{log} WebSocket to \"{url}\" refused {err}")
             return
         except ConnectionResetError as err:
             # Possibly the program has crashed
-            logger.warn(f"{log} WebSocket to {url} reset {err}")
+            logger.warn(f"{log} WebSocket to \"{url}\" reset {err}")
             return
         except websocket.WebSocketBadStatusException as err:
             # Possibly the window is changed
-            logger.warn(f"{log} WebSocket to {url} bad status {err}")
+            logger.warn(f"{log} WebSocket to \"{url}\" bad status {err}")
             return
-        logger.info(f"{log} WebSocket to {url} successful")
+        logger.info(f"{log} WebSocket to \"{url}\" successful")
         return ws
 
     def parse_ws_response(self, response: Optional[str], window: Dict[str, str]) -> int:
@@ -157,9 +156,12 @@ class Action:
             logger.warn(f"{log} \"{title} {self.name}\" response empty")
             return -1
         response_dict: Dict = json.loads(response)
+        logger.debug(
+            f"{log} Got response from { window[self.SOCKET_URL_KEY]}: {response_dict}"
+        )
         if "result" not in response_dict:
             logger.warn(
-                f"{log} \"{title} {self.name}\" response has no 'result'"
+                f"{log} {title} {self.name} response has no 'result'"
             )
             return -1
         result = response_dict["result"]
@@ -167,15 +169,15 @@ class Action:
             exception_details = result["exceptionDetails"]
             if "exception" not in exception_details:
                 logger.warn(
-                    f"{log} \"{title} {self.name}\" failed but no details"
+                    f"{log} {title} {self.name} failed but no details"
                 )
             else:
                 exception = exception_details["exception"]
                 logger.warn(
-                    f"{log} \"{title} {self.name}\" failed by {exception}"
+                    f"{log} {title} {self.name} failed by {exception}"
                 )
             return 1
-        logger.info(f"{log} \"{title} {self.name}\" successful")
+        logger.info(f"{log} {title} {self.name} successful")
         return 0
 
 

@@ -155,13 +155,16 @@ class Runner:
             if info is None:
                 if self.process.poll() is None:
                     # No info got; retry
+                    logger.warn(f"{log} No info got")
                     continue
                 else:
                     # Process terminated; exit loop
+                    logger.warn(f"{log} Process terminated")
                     break
             for window in info:
                 if ACTIONS.init.run(window):
                     # Injection successful
+                    logger.info(f"{log} Injection successful")
                     break
             else:
                 continue
@@ -206,6 +209,9 @@ class Runner:
             logger.warn(f"{log} No response got from \"{self.url}\"")
             return
         response_obj: List[Dict[str, str]] = response.json()
+        logger.debug(
+            f"{log} Got response data from \"{self.url}\": {response_obj}"
+        )
         return response_obj
 
     def get_req(self, url: str) -> Optional[requests.Response]:
