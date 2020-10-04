@@ -4,7 +4,7 @@
 from pathlib import Path
 from argparse import Namespace
 from dataclasses import dataclass
-from typing import Union, Optional
+from typing import Dict, Union, Optional
 
 
 @dataclass
@@ -25,3 +25,13 @@ class RunnerArgs(Namespace):
     boot: Union[bool, str, None]
     minimized: bool
     ptb: bool
+
+    @classmethod
+    def args_dict(cls) -> Dict:
+        return {
+            "discord_path": cls.discord_path,
+            "port": cls.port,
+            "boot": cls.boot,
+            "minimized": cls.minimized,
+            "ptb": cls.ptb
+        }

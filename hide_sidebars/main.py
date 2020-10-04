@@ -2,11 +2,14 @@
 """Main module. Decides which functions to call"""
 
 import platform
+import logging
 from pathlib import Path
 from argparse import ArgumentParser
 
 from hide_sidebars.runner_obj import WinRunner, MacOsRunner, LinuxRunner
 from hide_sidebars.custom_types import RunnerArgs
+
+logger = logging.getLogger(__name__)
 
 
 def parse_arguments() -> RunnerArgs:
@@ -15,6 +18,7 @@ def parse_arguments() -> RunnerArgs:
     Returns:
         [DiscordHideSidebarArgs]: The object containing all arguments
     """
+    log = "[parse_arguments]"
     parser = ArgumentParser(description="Hide sidebar on Discord!")
     parser.add_argument(
         "-d", "--discord-path",
@@ -55,6 +59,7 @@ def parse_arguments() -> RunnerArgs:
         dest="ptb"
     )
     args = parser.parse_args(namespace=RunnerArgs)
+    logger.info(f"{log} Args: {args.args_dict()}")
     return args
 
 
@@ -64,23 +69,30 @@ def main() -> None:
     Checks OS
     Runs respective code
     """
-
+    log = "[main]"
     args = parse_arguments()
 
     operating_system = platform.system()
+    logger.info(f"{log} Operating system: {operating_system}")
 
     if operating_system == "Windows":
         runner = WinRunner(args)
+        del args
         runner.run()
         return
     if operating_system == "Darwin":
         runner = MacOsRunner(args)
+        del args
         runner.run()
         return
     if operating_system == "Linux":
         runner = LinuxRunner(args)
+        del args
         runner.run()
         return
+    logger.critical(
+        f"Your operating system \"{platform.platform()}\" is not yet supported"
+    )
     raise NotImplementedError(
         f"Your operating system \"{platform.platform()}\" is not yet supported"
     )
