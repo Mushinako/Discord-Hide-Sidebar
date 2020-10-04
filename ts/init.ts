@@ -116,6 +116,10 @@ function hideSide(): void {
     buttonDiv!.innerHTML = svgRight;
     sidebarDiv!.style.width = hiddenWidth;
     if (!sidebarDiv!.classList.contains(sidebarMarkClassName)) {
+        const baseDiv = <HTMLDivElement>sidebarDiv!.parentElement!.parentElement;
+        const newContentDiv = document.createElement("div");
+        newContentDiv.appendChild(sidebarDiv!);
+        baseDiv.appendChild(newContentDiv);
         sidebarDiv!.addEventListener("mouseenter", mouseEnterHandler);
         sidebarDiv!.addEventListener("mouseleave", mouseLeaveHandler);
         sidebarDiv!.classList.add(sidebarMarkClassName);
@@ -130,6 +134,10 @@ function showSide(): void {
     buttonDiv!.classList.remove(hiddenClassName);
     buttonDiv!.innerHTML = svgLeft;
     sidebarDiv!.style.width = "";
+    const baseDiv = <HTMLDivElement>sidebarDiv!.parentElement!.parentElement;
+    while (baseDiv.childElementCount > 1) {
+        baseDiv.removeChild(baseDiv.lastChild!);
+    }
     sidebarDiv!.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv!.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv!.classList.remove(sidebarMarkClassName);
@@ -172,6 +180,12 @@ function keyHandler(ev: KeyboardEvent): void {
         if (ev.key === "l") {
             // <ctrl> + <l>
             toggleSidebar();
+            return;
+        }
+        if (ev.key === "w") {
+            // <ctrl> + <w>
+            // Keyboard close window
+            window.close();
             return;
         }
         return;

@@ -83,6 +83,10 @@ function hideSide() {
     buttonDiv.innerHTML = svgRight;
     sidebarDiv.style.width = hiddenWidth;
     if (!sidebarDiv.classList.contains(sidebarMarkClassName)) {
+        const baseDiv = sidebarDiv.parentElement.parentElement;
+        const newContentDiv = document.createElement("div");
+        newContentDiv.appendChild(sidebarDiv);
+        baseDiv.appendChild(newContentDiv);
         sidebarDiv.addEventListener("mouseenter", mouseEnterHandler);
         sidebarDiv.addEventListener("mouseleave", mouseLeaveHandler);
         sidebarDiv.classList.add(sidebarMarkClassName);
@@ -94,6 +98,10 @@ function showSide() {
     buttonDiv.classList.remove(hiddenClassName);
     buttonDiv.innerHTML = svgLeft;
     sidebarDiv.style.width = "";
+    const baseDiv = sidebarDiv.parentElement.parentElement;
+    while (baseDiv.childElementCount > 1) {
+        baseDiv.removeChild(baseDiv.lastChild);
+    }
     sidebarDiv.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv.classList.remove(sidebarMarkClassName);
@@ -118,6 +126,10 @@ function keyHandler(ev) {
         }
         if (ev.key === "l") {
             toggleSidebar();
+            return;
+        }
+        if (ev.key === "w") {
+            window.close();
             return;
         }
         return;
