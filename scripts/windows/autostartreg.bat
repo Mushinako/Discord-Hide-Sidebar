@@ -2,7 +2,9 @@
 
 set regkey="HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 set regname="Discord"
-set discordtmppath="discord.tmp"
+set scriptdir=%~dp0
+set discordtmpname=discord.tmp
+set discordtmppath="%scriptdir%%discordtmpname%"
 
 @REM Check existence of Discord
 reg query %regkey% /v %regname% > %discordtmppath% 2>nul || goto fail
@@ -29,7 +31,7 @@ set scriptpath="%scriptdir%%scriptname%"
 :after
 set regtype=REG_SZ
 
-echo "reg add %regkey% /f /v %regnameptb% /t %regtype% /d %scriptpath%"
+echo reg add %regkey% /f /v %regnameptb% /t %regtype% /d %scriptpath%
 reg add %regkey% /f /v %regnameptb% /t %regtype% /d %scriptpath%
 
 echo Boot patch finished!
