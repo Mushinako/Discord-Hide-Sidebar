@@ -157,7 +157,7 @@ class Action:
             return -1
         response_dict: Dict = json.loads(response)
         logger.debug(
-            f"{log} Got response from { window[self.SOCKET_URL_KEY]}: {response_dict}"
+            f"{log} Got response from \"{window[self.SOCKET_URL_KEY]}\": {response_dict}"
         )
         if "result" not in response_dict:
             logger.warn(

@@ -150,7 +150,7 @@ class Runner:
             f"{log} Discord started process {self.process.pid}"
         )
         while True:
-            sleep(0.5)
+            sleep(1)
             info = self.get_info()
             if info is None:
                 if self.process.poll() is None:

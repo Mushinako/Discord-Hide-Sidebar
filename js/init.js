@@ -1,124 +1,211 @@
 "use strict";
-var persist;
-var cache;
-var cn = "hide-side";
-var icn = "hide-sidebar-init";
-var bcn = "toolbar-1t6TWx";
-var scn = "sidebar-2K8pFh";
-var vcn = "wrapper-1Rf91z";
-var kcn = "key-el";
-var mConf = { childList: true };
-var g = false;
-var pre = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
-var post = '"></path></svg>';
-var svgLeft = pre + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + post;
-var svgRight = pre + "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" + post;
-var btnDiv;
-var sideEl;
-var dhsb = async () => {
-    const toolbars = document.getElementsByClassName(bcn);
+var persist = undefined;
+var cache = undefined;
+var hiddenClassName = "hide-side";
+var initClassName = "hide-sidebar-init";
+var bannerClassName = "toolbar-1t6TWx";
+var serverClassName = "wrapper-1Rf91z";
+var sidebarClassName = "sidebar-2K8pFh";
+var rightsideClassName = "chat-3bRxxu";
+var combinedClassName = "content-98HsJk";
+var keyMarkClassName = "key-el";
+var sidebarMarkClassName = "sidebar-el";
+var buttonClassNames = [
+    "iconWrapper-2OrFZ1",
+    "clickable-3rdHwn",
+    "focusable-1YV_-H",
+];
+var buttonAttributes = {
+    "role": "button",
+    "aria-label": "Toggle Sidebar",
+    "tabindex": "0",
+};
+var mutationObConf = { childList: true };
+var hiddenWidth = "20px";
+var firstRunSuccess = false;
+var timeoutId = undefined;
+var preSvg = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
+var postSvg = '"></path></svg>';
+var svgLeft = preSvg + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + postSvg;
+var svgRight = preSvg + "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" + postSvg;
+var sidebarDiv = undefined;
+var buttonDiv = undefined;
+var sidebarOb = undefined;
+var rightsideOb = undefined;
+var combinedOb = undefined;
+function discordHideSidebar() {
+    const toolbars = document.getElementsByClassName(bannerClassName);
     if (toolbars.length !== 1)
         return;
     const toolbar = toolbars[0];
-    if (toolbar.classList.contains(icn))
+    if (toolbar.classList.contains(initClassName))
         return;
-    const elements = document.getElementsByClassName(scn);
+    const elements = document.getElementsByClassName(sidebarClassName);
     if (elements.length !== 1)
         return;
-    toolbar.classList.add(icn);
-    btnDiv = document.createElement("div");
-    btnDiv.classList.add("iconWrapper-2OrFZ1", "clickable-3rdHwn", "focusable-1YV_-H");
-    btnDiv.setAttribute("role", "button");
-    btnDiv.setAttribute("aria-label", "Toggle Sidebar");
-    btnDiv.setAttribute("tabindex", "0");
-    sideEl = elements[0];
-    if (await getCache() === "1")
-        hideSide();
-    else
-        showSide();
-    btnDiv.addEventListener("click", () => {
-        if (btnDiv.classList.contains(cn))
-            showSide();
-        else
-            hideSide();
-    });
-    toolbar.appendChild(btnDiv);
-    if (!document.body.classList.contains(kcn)) {
-        document.addEventListener("keydown", keyEl);
-        document.body.classList.add(kcn);
+    if (buttonDiv === undefined) {
+        buttonDiv = document.createElement("div");
+        buttonDiv.classList.add(...buttonClassNames);
+        for (const [key, value] of Object.entries(buttonAttributes)) {
+            buttonDiv.setAttribute(key, value);
+        }
     }
-    g = true;
-};
-var hideSide = () => {
-    btnDiv.classList.add(cn);
-    btnDiv.innerHTML = svgRight;
-    sideEl.style.display = "none";
+    sidebarDiv = elements[0];
+    loadConfig();
+    buttonDiv.addEventListener("click", toggleSidebar);
+    sidebarDiv.style.transition = "width 0.3s ease-in-out";
+    toolbar.appendChild(buttonDiv);
+    if (!document.body.classList.contains(keyMarkClassName)) {
+        document.addEventListener("keydown", keyHandler);
+        document.body.classList.add(keyMarkClassName);
+    }
+    toolbar.classList.add(initClassName);
+    firstRunSuccess = true;
+}
+async function loadConfig() {
+    if (await getCache() === "1") {
+        hideSide();
+    }
+    else {
+        showSide();
+    }
+}
+function toggleSidebar() {
+    if (buttonDiv.classList.contains(hiddenClassName)) {
+        showSide();
+    }
+    else {
+        hideSide();
+    }
+}
+function hideSide() {
+    buttonDiv.classList.add(hiddenClassName);
+    buttonDiv.innerHTML = svgRight;
+    sidebarDiv.style.width = hiddenWidth;
+    if (!sidebarDiv.classList.contains(sidebarMarkClassName)) {
+        sidebarDiv.addEventListener("mouseenter", mouseEnterHandler);
+        sidebarDiv.addEventListener("mouseleave", mouseLeaveHandler);
+        sidebarDiv.classList.add(sidebarMarkClassName);
+    }
     setCache("1");
-};
-var showSide = () => {
-    btnDiv.classList.remove(cn);
-    btnDiv.innerHTML = svgLeft;
-    sideEl.style.display = "";
+}
+;
+function showSide() {
+    buttonDiv.classList.remove(hiddenClassName);
+    buttonDiv.innerHTML = svgLeft;
+    sidebarDiv.style.width = "";
+    sidebarDiv.removeEventListener("mouseenter", mouseEnterHandler);
+    sidebarDiv.removeEventListener("mouseleave", mouseLeaveHandler);
+    sidebarDiv.classList.remove(sidebarMarkClassName);
     setCache("0");
-};
-var keyEl = (ev) => {
+}
+;
+function mouseEnterHandler(ev) {
+    timeoutId = setTimeout(() => {
+        ev.target.style.width = "";
+    }, 100);
+}
+function mouseLeaveHandler(ev) {
+    clearTimeout(timeoutId);
+    timeoutId = undefined;
+    ev.target.style.width = hiddenWidth;
+}
+function keyHandler(ev) {
     if (ev.ctrlKey) {
         if (ev.key === "L") {
-            dhsb();
+            discordHideSidebar();
             return;
         }
         if (ev.key === "l") {
-            if (btnDiv.classList.contains(cn))
-                showSide();
-            else
-                hideSide();
+            toggleSidebar();
             return;
         }
         return;
     }
-};
-var getServerUrl = () => {
+}
+;
+function getServerUrl() {
     const paths = location.pathname.split("/");
-    if (paths[paths.length - 1] === "")
+    if (paths[paths.length - 1] === "") {
         paths.pop();
+    }
     if (paths.length <= 2)
         return null;
     paths.pop();
     return /^\d+$/.test(paths[paths.length - 1]) ? location.protocol + "//" + location.host + paths.join("/") : null;
-};
-var getCache = async () => {
+}
+;
+async function getCache() {
     const url = getServerUrl();
     if (url === null)
         return null;
     const response = await cache.match(url);
     return response === undefined ? null : await response.text();
-};
-var setCache = (val) => {
+}
+;
+function setCache(val) {
     const url = getServerUrl();
-    if (url !== null)
+    if (url !== null) {
         cache.put(url, new Response(val));
-};
-var clearCache = () => cache.keys().then(keys => {
-    for (const req of keys)
-        cache.delete(req);
-});
-var checkMut = () => dhsb();
-var getMTar = () => {
-    const sidebars = document.getElementsByClassName(scn);
-    if (sidebars.length !== 1)
-        throw new ReferenceError("Invalid window");
-    return sidebars[0];
-};
-var firstRun = async () => {
-    while (!g)
-        await dhsb();
-};
+    }
+}
+;
+function clearCache() {
+    cache.keys().then(keys => {
+        for (const req of keys) {
+            cache.delete(req);
+        }
+    });
+}
+function getMutationObTarget(className, sectionName) {
+    const elements = document.getElementsByClassName(className);
+    if (elements.length !== 1)
+        throw new ReferenceError(`Incorrect window ${sectionName}`);
+    return elements[0];
+}
+function checkSidebarMutation() {
+    discordHideSidebar();
+    setCombinedMutationCheck();
+    setRightsideMutationCheck();
+}
+function checkRightsideMutation() {
+    discordHideSidebar();
+}
+function setSidebarMutationCheck() {
+    const mutationObSidebarTarget = getMutationObTarget(sidebarClassName, "sidebar");
+    if (sidebarOb !== undefined) {
+        sidebarOb.disconnect();
+    }
+    sidebarOb = new MutationObserver(checkSidebarMutation);
+    sidebarOb.observe(mutationObSidebarTarget, mutationObConf);
+}
+function setRightsideMutationCheck() {
+    const mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    if (rightsideOb !== undefined) {
+        rightsideOb.disconnect();
+    }
+    rightsideOb = new MutationObserver(checkRightsideMutation);
+    rightsideOb.observe(mutationObRightsideTarget, mutationObConf);
+}
+function setCombinedMutationCheck() {
+    const mutationObCombinedTarget = getMutationObTarget(combinedClassName, "combined");
+    if (combinedOb !== undefined) {
+        combinedOb.disconnect();
+    }
+    combinedOb = new MutationObserver(checkRightsideMutation);
+    combinedOb.observe(mutationObCombinedTarget, mutationObConf);
+}
+var sleep = (time) => new Promise((res) => setTimeout(res, time));
 (async () => {
     persist = await navigator.storage.persist();
     if (!persist)
         console.log("%cOh no no save", "color:red;font-size:96px;-webkit-text-stroke:2px yellow;");
-    cache = await caches.open(cn);
+    cache = await caches.open(hiddenClassName);
+    while (!firstRunSuccess) {
+        await sleep(1000);
+        discordHideSidebar();
+    }
+    setSidebarMutationCheck();
+    setCombinedMutationCheck();
+    setRightsideMutationCheck();
 })();
-var mTar = getMTar();
-new MutationObserver(checkMut).observe(mTar, mConf);
-firstRun();
