@@ -1,6 +1,7 @@
 "use strict";
 var persist = undefined;
 var cache = undefined;
+var meServerName = "@me";
 var hiddenClassName = "hide-side";
 var initClassName = "hide-sidebar-init";
 var bannerClassName = "toolbar-1t6TWx";
@@ -22,8 +23,10 @@ var buttonAttributes = {
 };
 var mutationObConf = { childList: true };
 var hiddenWidth = "20px";
+var hiddenHeight = "calc(100vh - 22px)";
 var firstRunSuccess = false;
 var timeoutId = undefined;
+var processingFlag = false;
 var preSvg = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
 var postSvg = '"></path></svg>';
 var svgLeft = preSvg + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + postSvg;
@@ -33,6 +36,8 @@ var buttonDiv = undefined;
 var sidebarOb = undefined;
 var rightsideOb = undefined;
 var combinedOb = undefined;
+var animTime = 0.2;
+var animTimeMs = animTime * 1000;
 function discordHideSidebar() {
     const toolbars = document.getElementsByClassName(bannerClassName);
     if (toolbars.length !== 1)
@@ -53,7 +58,7 @@ function discordHideSidebar() {
     sidebarDiv = elements[0];
     loadConfig();
     buttonDiv.addEventListener("click", toggleSidebar);
-    sidebarDiv.style.transition = "width 0.3s ease-in-out";
+    sidebarDiv.style.transition = `width ${animTime}s ease-in-out`;
     toolbar.appendChild(buttonDiv);
     if (!document.body.classList.contains(keyMarkClassName)) {
         document.addEventListener("keydown", keyHandler);
@@ -63,41 +68,81 @@ function discordHideSidebar() {
     firstRunSuccess = true;
 }
 async function loadConfig() {
+    if (processingFlag === true)
+        return;
+    processingFlag = true;
     if (await getCache() === "1") {
         hideSide();
     }
     else {
         showSide();
     }
+    processingFlag = false;
 }
 function toggleSidebar() {
+    if (processingFlag === true)
+        return;
+    processingFlag = true;
     if (buttonDiv.classList.contains(hiddenClassName)) {
         showSide();
     }
     else {
         hideSide();
     }
+    processingFlag = false;
 }
 function hideSide() {
+    setCache("1");
+    if (buttonDiv === undefined || sidebarDiv === undefined)
+        return;
     buttonDiv.classList.add(hiddenClassName);
     buttonDiv.innerHTML = svgRight;
     sidebarDiv.style.width = hiddenWidth;
-    if (!sidebarDiv.classList.contains(sidebarMarkClassName)) {
+    sidebarDiv.style.height = hiddenHeight;
+    if (sidebarDiv.classList.contains(sidebarMarkClassName))
+        return;
+    const newSidebarDiv = document.createElement("div");
+    newSidebarDiv.style.width = hiddenWidth;
+    const baseDiv = sidebarDiv.parentElement.parentElement;
+    const newContentDiv = document.createElement("div");
+    setTimeout(() => {
+        sidebarDiv.parentElement.insertBefore(newSidebarDiv, sidebarDiv);
+        newContentDiv.appendChild(sidebarDiv);
+        newContentDiv.style.position = "absolute";
+        newContentDiv.style.zIndex = "2";
+        baseDiv.appendChild(newContentDiv);
         sidebarDiv.addEventListener("mouseenter", mouseEnterHandler);
         sidebarDiv.addEventListener("mouseleave", mouseLeaveHandler);
         sidebarDiv.classList.add(sidebarMarkClassName);
-    }
-    setCache("1");
+    }, animTimeMs);
 }
 ;
 function showSide() {
+    setCache("0");
+    if (buttonDiv === undefined || sidebarDiv === undefined)
+        return;
     buttonDiv.classList.remove(hiddenClassName);
     buttonDiv.innerHTML = svgLeft;
-    sidebarDiv.style.width = "";
+    if (!sidebarDiv.classList.contains(sidebarMarkClassName)) {
+        sidebarDiv.style.width = "";
+        return;
+    }
+    const baseDiv = sidebarDiv.parentElement.parentElement;
+    const contentDiv = baseDiv.children[baseDiv.childElementCount - 2];
+    if (contentDiv.childElementCount !== 2)
+        throw new ReferenceError("Invalid showSide parent");
+    contentDiv.removeChild(contentDiv.firstChild);
+    contentDiv.insertBefore(sidebarDiv, contentDiv.firstChild);
+    setTimeout(() => {
+        sidebarDiv.style.width = "";
+        sidebarDiv.style.height = "";
+    }, 100);
     sidebarDiv.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv.classList.remove(sidebarMarkClassName);
-    setCache("0");
+    if (baseDiv.childElementCount > 1) {
+        baseDiv.removeChild(baseDiv.lastChild);
+    }
 }
 ;
 function mouseEnterHandler(ev) {
@@ -120,19 +165,19 @@ function keyHandler(ev) {
             toggleSidebar();
             return;
         }
+        if (ev.key === "w") {
+            window.close();
+            return;
+        }
         return;
     }
 }
 ;
 function getServerUrl() {
     const paths = location.pathname.split("/");
-    if (paths[paths.length - 1] === "") {
-        paths.pop();
-    }
-    if (paths.length <= 2)
+    if (paths.length < 3)
         return null;
-    paths.pop();
-    return /^\d+$/.test(paths[paths.length - 1]) ? location.protocol + "//" + location.host + paths.join("/") : null;
+    return paths[2] === meServerName || /^\d+$/.test(paths[2]) ? "/" + paths[2] : null;
 }
 ;
 async function getCache() {
@@ -180,7 +225,12 @@ function setSidebarMutationCheck() {
     sidebarOb.observe(mutationObSidebarTarget, mutationObConf);
 }
 function setRightsideMutationCheck() {
-    const mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    try {
+        var mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    }
+    catch (_a) {
+        return;
+    }
     if (rightsideOb !== undefined) {
         rightsideOb.disconnect();
     }
