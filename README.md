@@ -28,11 +28,15 @@ If you don't know how to mitigate this risk and are not willing to take it, plea
 When Discord is launched through the script, there'll be a `<` next to `?` on the top-right.
 Click `<` to toggle. The toggle hides friends list and channels list.
 
-Alternatively, use <kbd>Ctrl</kbd> + <kbd>l</kbd>
-
 ![Example](asset/eg.gif)
 
-If there's no such toggle, try <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>l</kbd> to get the toggle to show
+### Keyboard Shortcuts
+
+| Keys                                        | Action                                                 |
+| :-----------------------------------------: | :----------------------------------------------------: |
+| <kbd>Ctrl</kbd><kbd>l</kbd>                 | Toggle the sidebar                                     |
+| <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>l</kbd> | Attempt to refresh the script (If anything goes wrong) |
+| <kbd>Ctrl</kbd><kbd>w</kbd>                 | Closes window (Does not quit program)                  |
 
 ### Basic Usage
 
