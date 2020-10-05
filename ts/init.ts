@@ -4,6 +4,8 @@ var persist: boolean | undefined = undefined;
 // Use `Cache` because `localStorage` does not exist
 var cache: Cache | undefined = undefined;
 
+var meServerName = "@me";
+
 var hiddenClassName = "hide-side";          // Hidden flag, cache name
 var initClassName = "hide-sidebar-init";    // Initiation flag
 var bannerClassName = "toolbar-1t6TWx";     // Banner class name
@@ -29,6 +31,7 @@ var buttonAttributes = {                    // Attributes for the button
 
 var mutationObConf = { childList: true };   // MutationObserver config
 var hiddenWidth = "20px";                   // Width for hidden sidebar
+var hiddenHeight = "calc(100vh - 22px)";    // Height for hidden sidebar, has to specify due to absolute position
 
 var firstRunSuccess = false;                // Whether first run is successful
 var timeoutId: number | undefined = undefined;  // ID of MouseEnter setTimeOut
@@ -44,6 +47,9 @@ var buttonDiv: HTMLDivElement | undefined = undefined;      // The div that cont
 var sidebarOb: MutationObserver | undefined = undefined;    // Sidebar mutation observer
 var rightsideOb: MutationObserver | undefined = undefined;  // Right side mutation observer
 var combinedOb: MutationObserver | undefined = undefined;   // Combined div mutation observer
+
+var animTime = 0.2;                 // Animation time in seconds
+var animTimeMs = animTime * 1000;   // Animation time in milliseconds
 
 /**
  * Main function to be run for each server
@@ -72,7 +78,7 @@ function discordHideSidebar(): void {
     // Click event
     buttonDiv.addEventListener("click", toggleSidebar);
     // Sidebar transition and mouseover
-    sidebarDiv.style.transition = "width 0.3s ease-in-out";
+    sidebarDiv.style.transition = `width ${animTime}s ease-in-out`;
     // Append
     toolbar.appendChild(buttonDiv);
     // Keyboard event
@@ -112,28 +118,57 @@ function toggleSidebar(): void {
  * Hiding the sidebar
  */
 function hideSide(): void {
-    buttonDiv!.classList.add(hiddenClassName);
-    buttonDiv!.innerHTML = svgRight;
-    sidebarDiv!.style.width = hiddenWidth;
-    if (!sidebarDiv!.classList.contains(sidebarMarkClassName)) {
+    setCache("1");
+    if (buttonDiv === undefined || sidebarDiv === undefined) return;
+    buttonDiv.classList.add(hiddenClassName);
+    buttonDiv.innerHTML = svgRight;
+    sidebarDiv.style.width = hiddenWidth;
+    sidebarDiv.style.height = hiddenHeight;
+    if (sidebarDiv.classList.contains(sidebarMarkClassName)) return;
+    const newSidebarDiv = document.createElement("div");
+    newSidebarDiv.style.width = hiddenWidth;
+    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement;
+    const newContentDiv = document.createElement("div");
+    setTimeout((): void => {
+        sidebarDiv!.parentElement!.insertBefore(newSidebarDiv, sidebarDiv!);
+        newContentDiv.appendChild(sidebarDiv!);
+        newContentDiv.style.position = "absolute";
+        newContentDiv.style.zIndex = "2";
+        baseDiv.appendChild(newContentDiv);
         sidebarDiv!.addEventListener("mouseenter", mouseEnterHandler);
         sidebarDiv!.addEventListener("mouseleave", mouseLeaveHandler);
         sidebarDiv!.classList.add(sidebarMarkClassName);
-    }
-    setCache("1");
+    }, animTimeMs);
 };
 
 /**
  * Showing the sidebar
  */
 function showSide(): void {
-    buttonDiv!.classList.remove(hiddenClassName);
-    buttonDiv!.innerHTML = svgLeft;
-    sidebarDiv!.style.width = "";
+    setCache("0");
+    if (buttonDiv === undefined || sidebarDiv === undefined) return;
+    buttonDiv.classList.remove(hiddenClassName);
+    buttonDiv.innerHTML = svgLeft;
+    if (!sidebarDiv.classList.contains(sidebarMarkClassName)) {
+        sidebarDiv.style.width = "";
+        return;
+    }
+    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement;
+    if (baseDiv.childElementCount > 2) throw new ReferenceError("Invalid showSide parent parent")
+    const contentDiv = <HTMLDivElement>baseDiv.firstChild;
+    if (contentDiv.childElementCount !== 2) throw new ReferenceError("Invalid showSide parent");
+    contentDiv.removeChild(contentDiv.firstChild!);
+    contentDiv.insertBefore(sidebarDiv!, contentDiv.firstChild);
+    setTimeout((): void => {
+        sidebarDiv!.style.width = "";
+        sidebarDiv!.style.height = "";
+    }, 100);
     sidebarDiv!.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv!.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv!.classList.remove(sidebarMarkClassName);
-    setCache("0");
+    if (baseDiv.childElementCount === 2) {
+        baseDiv.removeChild(baseDiv.lastChild!);
+    }
 };
 
 /**
@@ -174,6 +209,12 @@ function keyHandler(ev: KeyboardEvent): void {
             toggleSidebar();
             return;
         }
+        if (ev.key === "w") {
+            // <ctrl> + <w>
+            // Keyboard close window
+            window.close();
+            return;
+        }
         return;
     }
 };
@@ -184,12 +225,8 @@ function keyHandler(ev: KeyboardEvent): void {
  */
 function getServerUrl(): string | null {
     const paths = location.pathname.split("/");
-    if (paths[paths.length - 1] === "") {
-        paths.pop();
-    }
-    if (paths.length <= 2) return null;
-    paths.pop();
-    return /^\d+$/.test(paths[paths.length - 1]) ? location.protocol + "//" + location.host + paths.join("/") : null;
+    if (paths.length < 3) return null;
+    return paths[2] === meServerName || /^\d+$/.test(paths[2]) ? "/" + paths[2] : null;
 };
 
 /**

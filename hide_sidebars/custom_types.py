@@ -10,7 +10,7 @@ from typing import Dict, Union, Optional
 @dataclass
 class RunnerArgs(Namespace):
     """Specific `Namespace` object for arguments of this program
-    Mainly used for type notation
+    Mainly used for type notation and logging
 
     Instance variables:
         discord_path  [Optional[pathlib.Path]]: Path of Discord executable
