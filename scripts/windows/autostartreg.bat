@@ -35,4 +35,3 @@ echo reg add %regkey% /f /v %regnameptb% /t %regtype% /d %scriptpath%
 reg add %regkey% /f /v %regnameptb% /t %regtype% /d %scriptpath%
 
 echo Boot patch finished!
-ping localhost -n 5 >nul
