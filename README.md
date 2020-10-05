@@ -33,7 +33,7 @@ Click `<` to toggle. The toggle hides friends list and channels list.
 ### Keyboard Shortcuts
 
 | Keys                                        | Action                                                 |
-| :-----------------------------------------: | :----------------------------------------------------: |
+| :-----------------------------------------: | :----------------------------------------------------- |
 | <kbd>Ctrl</kbd><kbd>l</kbd>                 | Toggle the sidebar                                     |
 | <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>l</kbd> | Attempt to refresh the script (If anything goes wrong) |
 | <kbd>Ctrl</kbd><kbd>w</kbd>                 | Closes window (Does not quit program)                  |
