@@ -35,6 +35,7 @@ var hiddenHeight = "calc(100vh - 22px)";    // Height for hidden sidebar, has to
 
 var firstRunSuccess = false;                // Whether first run is successful
 var timeoutId: number | undefined = undefined;  // ID of MouseEnter setTimeOut
+var processingFlag = false;                 // Whether an action is being processed
 
 var preSvg = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
 var postSvg = '"></path></svg>';
@@ -96,22 +97,28 @@ function discordHideSidebar(): void {
  * Load config from cache and act accordingly
  */
 async function loadConfig(): Promise<void> {
+    if (processingFlag === true) return;
+    processingFlag = true;
     if (await getCache() === "1") {
         hideSide();
     } else {
         showSide();
     }
+    processingFlag = false;
 }
 
 /**
  * Toggle sidebar visibility
  */
 function toggleSidebar(): void {
+    if (processingFlag === true) return;
+    processingFlag = true;
     if (buttonDiv!.classList.contains(hiddenClassName)) {
         showSide();
     } else {
         hideSide();
     }
+    processingFlag = false;
 }
 
 /**
@@ -154,8 +161,7 @@ function showSide(): void {
         return;
     }
     const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement;
-    if (baseDiv.childElementCount > 2) throw new ReferenceError("Invalid showSide parent parent")
-    const contentDiv = <HTMLDivElement>baseDiv.firstChild;
+    const contentDiv = <HTMLDivElement>baseDiv.children[baseDiv.childElementCount - 2];
     if (contentDiv.childElementCount !== 2) throw new ReferenceError("Invalid showSide parent");
     contentDiv.removeChild(contentDiv.firstChild!);
     contentDiv.insertBefore(sidebarDiv!, contentDiv.firstChild);
@@ -166,7 +172,7 @@ function showSide(): void {
     sidebarDiv!.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv!.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv!.classList.remove(sidebarMarkClassName);
-    if (baseDiv.childElementCount === 2) {
+    if (baseDiv.childElementCount > 1) {
         baseDiv.removeChild(baseDiv.lastChild!);
     }
 };
@@ -312,7 +318,11 @@ function setSidebarMutationCheck(): void {
  */
 function setRightsideMutationCheck(): void {
     // Get observee (sidebar)
-    const mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    try {
+        var mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    } catch {
+        return;
+    }
     // Observe changes
     if (rightsideOb !== undefined) {
         rightsideOb.disconnect();

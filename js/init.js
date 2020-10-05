@@ -26,6 +26,7 @@ var hiddenWidth = "20px";
 var hiddenHeight = "calc(100vh - 22px)";
 var firstRunSuccess = false;
 var timeoutId = undefined;
+var processingFlag = false;
 var preSvg = '<svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="';
 var postSvg = '"></path></svg>';
 var svgLeft = preSvg + "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" + postSvg;
@@ -67,20 +68,28 @@ function discordHideSidebar() {
     firstRunSuccess = true;
 }
 async function loadConfig() {
+    if (processingFlag === true)
+        return;
+    processingFlag = true;
     if (await getCache() === "1") {
         hideSide();
     }
     else {
         showSide();
     }
+    processingFlag = false;
 }
 function toggleSidebar() {
+    if (processingFlag === true)
+        return;
+    processingFlag = true;
     if (buttonDiv.classList.contains(hiddenClassName)) {
         showSide();
     }
     else {
         hideSide();
     }
+    processingFlag = false;
 }
 function hideSide() {
     setCache("1");
@@ -119,9 +128,7 @@ function showSide() {
         return;
     }
     const baseDiv = sidebarDiv.parentElement.parentElement;
-    if (baseDiv.childElementCount > 2)
-        throw new ReferenceError("Invalid showSide parent parent");
-    const contentDiv = baseDiv.firstChild;
+    const contentDiv = baseDiv.children[baseDiv.childElementCount - 2];
     if (contentDiv.childElementCount !== 2)
         throw new ReferenceError("Invalid showSide parent");
     contentDiv.removeChild(contentDiv.firstChild);
@@ -133,7 +140,7 @@ function showSide() {
     sidebarDiv.removeEventListener("mouseenter", mouseEnterHandler);
     sidebarDiv.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv.classList.remove(sidebarMarkClassName);
-    if (baseDiv.childElementCount === 2) {
+    if (baseDiv.childElementCount > 1) {
         baseDiv.removeChild(baseDiv.lastChild);
     }
 }
@@ -218,7 +225,12 @@ function setSidebarMutationCheck() {
     sidebarOb.observe(mutationObSidebarTarget, mutationObConf);
 }
 function setRightsideMutationCheck() {
-    const mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    try {
+        var mutationObRightsideTarget = getMutationObTarget(rightsideClassName, "right side");
+    }
+    catch (_a) {
+        return;
+    }
     if (rightsideOb !== undefined) {
         rightsideOb.disconnect();
     }
