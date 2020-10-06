@@ -134,7 +134,7 @@ function hideSide(): void {
     if (sidebarDiv.classList.contains(sidebarMarkClassName)) return;
     const newSidebarDiv = document.createElement("div");
     newSidebarDiv.style.width = hiddenWidth;
-    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement;
+    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement!;
     const newContentDiv = document.createElement("div");
     setTimeout((): void => {
         sidebarDiv!.parentElement!.insertBefore(newSidebarDiv, sidebarDiv!);
@@ -150,6 +150,7 @@ function hideSide(): void {
 
 /**
  * Showing the sidebar
+ * @throws {ReferenceError} The window does not have the element of interest
  */
 function showSide(): void {
     setCache("0");
@@ -160,11 +161,11 @@ function showSide(): void {
         sidebarDiv.style.width = "";
         return;
     }
-    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement;
+    const baseDiv = <HTMLDivElement>sidebarDiv.parentElement!.parentElement!;
     const contentDiv = <HTMLDivElement>baseDiv.children[baseDiv.childElementCount - 2];
     if (contentDiv.childElementCount !== 2) throw new ReferenceError("Invalid showSide parent");
-    contentDiv.removeChild(contentDiv.firstChild!);
-    contentDiv.insertBefore(sidebarDiv!, contentDiv.firstChild);
+    contentDiv.removeChild(contentDiv.firstElementChild!);
+    contentDiv.insertBefore(sidebarDiv!, contentDiv.firstElementChild);
     setTimeout((): void => {
         sidebarDiv!.style.width = "";
         sidebarDiv!.style.height = "";
@@ -173,7 +174,7 @@ function showSide(): void {
     sidebarDiv!.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv!.classList.remove(sidebarMarkClassName);
     if (baseDiv.childElementCount > 1) {
-        baseDiv.removeChild(baseDiv.lastChild!);
+        baseDiv.removeChild(baseDiv.lastElementChild!);
     }
 };
 
@@ -223,7 +224,32 @@ function keyHandler(ev: KeyboardEvent): void {
         }
         return;
     }
+    if (ev.altKey) {
+        if (ev.key === "PageDown") {
+            // <alt> + <PgDn>
+            scrollToBottom();
+            return;
+        }
+        return;
+    }
 };
+
+/**
+ * Scrolls chat div to bottom
+ * @throws {ReferenceError} The window does not have the element of interest
+ */
+function scrollToBottom(): void {
+    const rightsideDivs = document.getElementsByClassName(rightsideClassName);
+    if (rightsideDivs.length !== 1) throw ReferenceError("Invalid right side div");
+    const rightsideDiv = rightsideDivs[0];
+    const chatDiv = rightsideDiv.lastElementChild!.firstElementChild!.firstElementChild!.lastElementChild!;
+    const scrollOptions = <ScrollToOptions>{
+        top: chatDiv.scrollHeight,
+        left: chatDiv.scrollLeft,
+        behavior: "smooth",
+    };
+    chatDiv.scrollTo(scrollOptions);
+}
 
 /**
  * Get the server URL by chopping of the channel URL

@@ -131,8 +131,8 @@ function showSide() {
     const contentDiv = baseDiv.children[baseDiv.childElementCount - 2];
     if (contentDiv.childElementCount !== 2)
         throw new ReferenceError("Invalid showSide parent");
-    contentDiv.removeChild(contentDiv.firstChild);
-    contentDiv.insertBefore(sidebarDiv, contentDiv.firstChild);
+    contentDiv.removeChild(contentDiv.firstElementChild);
+    contentDiv.insertBefore(sidebarDiv, contentDiv.firstElementChild);
     setTimeout(() => {
         sidebarDiv.style.width = "";
         sidebarDiv.style.height = "";
@@ -141,7 +141,7 @@ function showSide() {
     sidebarDiv.removeEventListener("mouseleave", mouseLeaveHandler);
     sidebarDiv.classList.remove(sidebarMarkClassName);
     if (baseDiv.childElementCount > 1) {
-        baseDiv.removeChild(baseDiv.lastChild);
+        baseDiv.removeChild(baseDiv.lastElementChild);
     }
 }
 ;
@@ -171,8 +171,28 @@ function keyHandler(ev) {
         }
         return;
     }
+    if (ev.altKey) {
+        if (ev.key === "PageDown") {
+            scrollToBottom();
+            return;
+        }
+        return;
+    }
 }
 ;
+function scrollToBottom() {
+    const rightsideDivs = document.getElementsByClassName(rightsideClassName);
+    if (rightsideDivs.length !== 1)
+        throw ReferenceError("Invalid right side div");
+    const rightsideDiv = rightsideDivs[0];
+    const chatDiv = rightsideDiv.lastElementChild.firstElementChild.firstElementChild.lastElementChild;
+    const scrollOptions = {
+        top: chatDiv.scrollHeight,
+        left: chatDiv.scrollLeft,
+        behavior: "smooth",
+    };
+    chatDiv.scrollTo(scrollOptions);
+}
 function getServerUrl() {
     const paths = location.pathname.split("/");
     if (paths.length < 3)
