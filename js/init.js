@@ -9,8 +9,11 @@ var serverClassName = "wrapper-1Rf91z";
 var sidebarClassName = "sidebar-2K8pFh";
 var rightsideClassName = "chat-3bRxxu";
 var combinedClassName = "content-98HsJk";
+var scrollerClassName = "scroller-2LSbBU";
+var jumpButtonClassName = "barButtonAlt-mYL1lj";
 var keyMarkClassName = "key-el";
 var sidebarMarkClassName = "sidebar-el";
+var jumpToPresentText = "Jump To Present";
 var buttonClassNames = [
     "iconWrapper-2OrFZ1",
     "clickable-3rdHwn",
@@ -171,21 +174,26 @@ function keyHandler(ev) {
         }
         return;
     }
-    if (ev.altKey) {
-        if (ev.key === "PageDown") {
-            scrollToBottom();
-            return;
-        }
+    if (ev.key === "PageDown" && ev.altKey) {
+        scrollToBottom();
         return;
     }
+    return;
 }
 ;
 function scrollToBottom() {
-    const rightsideDivs = document.getElementsByClassName(rightsideClassName);
-    if (rightsideDivs.length !== 1)
-        throw ReferenceError("Invalid right side div");
-    const rightsideDiv = rightsideDivs[0];
-    const chatDiv = rightsideDiv.lastElementChild.firstElementChild.firstElementChild.lastElementChild;
+    const jumpButtons = document.getElementsByClassName(jumpButtonClassName);
+    for (const jumpButton of jumpButtons) {
+        const text = jumpButton.firstChild.textContent.trim();
+        if (text === jumpToPresentText) {
+            jumpButton.click();
+            return;
+        }
+    }
+    const scrollerDivs = document.getElementsByClassName(scrollerClassName);
+    if (scrollerDivs.length !== 1)
+        throw ReferenceError("Invalid scroller div");
+    const chatDiv = scrollerDivs[0];
     const scrollOptions = {
         top: chatDiv.scrollHeight,
         left: chatDiv.scrollLeft,
