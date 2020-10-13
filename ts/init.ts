@@ -1,4 +1,10 @@
 "use strict";
+
+// Make `HTMLCollectionOf` iterable
+interface HTMLCollectionOf<T extends Element> {
+    [Symbol.iterator](): Iterator<T>;
+}
+
 // Whether `Cache` allows persistent storage
 var persist: boolean | undefined = undefined;
 // Use `Cache` because `localStorage` does not exist
@@ -13,9 +19,13 @@ var serverClassName = "wrapper-1Rf91z";     // Server list class name
 var sidebarClassName = "sidebar-2K8pFh";    // Sidebar class name
 var rightsideClassName = "chat-3bRxxu";     // Right side class name
 var combinedClassName = "content-98HsJk";   // Combined div class name
+var scrollerClassName = "scroller-2LSbBU";  // Scroller div class name
+var jumpButtonClassName = "barButtonAlt-mYL1lj";    // Button for "jump to present" class name
 
 var keyMarkClassName = "key-el";            // Class to mark keyboard event listener enabled
 var sidebarMarkClassName = "sidebar-el";    // Class to mark sidebar mouse event listener enabled
+
+var jumpToPresentText = "Jump To Present";  // Text on "Jump to Present" button
 
 var buttonClassNames = [                    // Classes for the button
     "iconWrapper-2OrFZ1",
@@ -224,14 +234,12 @@ function keyHandler(ev: KeyboardEvent): void {
         }
         return;
     }
-    if (ev.altKey) {
-        if (ev.key === "PageDown") {
-            // <alt> + <PgDn>
-            scrollToBottom();
-            return;
-        }
+    if (ev.key === "PageDown" && ev.altKey) {
+        // <alt> (+ <shift>) + <PgDn>
+        scrollToBottom();
         return;
     }
+    return;
 };
 
 /**
@@ -239,10 +247,20 @@ function keyHandler(ev: KeyboardEvent): void {
  * @throws {ReferenceError} The window does not have the element of interest
  */
 function scrollToBottom(): void {
-    const rightsideDivs = document.getElementsByClassName(rightsideClassName);
-    if (rightsideDivs.length !== 1) throw ReferenceError("Invalid right side div");
-    const rightsideDiv = rightsideDivs[0];
-    const chatDiv = rightsideDiv.lastElementChild!.firstElementChild!.firstElementChild!.lastElementChild!;
+    // Check whether "Jump To Present" button is present
+    const jumpButtons = document.getElementsByClassName(jumpButtonClassName);
+    for (const jumpButton of jumpButtons) {
+        const text = (<Text>jumpButton.firstChild).textContent!.trim();
+        if (text === jumpToPresentText) {
+            // "Jump To Present" button
+            (<HTMLButtonElement>jumpButton).click();
+            return;
+        }
+    }
+    // No "Jump To Present" button
+    const scrollerDivs = document.getElementsByClassName(scrollerClassName);
+    if (scrollerDivs.length !== 1) throw ReferenceError("Invalid scroller div");
+    const chatDiv = scrollerDivs[0];
     const scrollOptions = <ScrollToOptions>{
         top: chatDiv.scrollHeight,
         left: chatDiv.scrollLeft,
