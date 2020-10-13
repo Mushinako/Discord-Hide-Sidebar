@@ -32,6 +32,8 @@ class Action:
     SOCKET_URL_KEY = "webSocketDebuggerUrl"
     TITLE_BLACKLIST = [
         "discord updater",
+        "",
+        "index.html",
     ]
 
     def __init__(self, name: str) -> None:
